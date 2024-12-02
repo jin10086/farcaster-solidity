@@ -219,8 +219,7 @@ describe('TaskReward Contract', async () => {
             );
 
             // Fast forward time to after endTime
-            await ethers.provider.send("evm_increaseTime", [oneDay + 1]);
-            await ethers.provider.send("evm_mine", []);
+            await helperstime.increase(endTime + 1);
 
             const tx = await taskReward.submitProof(
                 taskId, // taskId
@@ -313,8 +312,7 @@ describe('TaskReward Contract', async () => {
             );
 
             // Fast forward time to after endTime
-            await ethers.provider.send("evm_increaseTime", [endTime + 1]);
-            await ethers.provider.send("evm_mine", []);
+            await helperstime.increase(endTime + 1);
 
 
             //use likecast to verify recast
@@ -357,8 +355,7 @@ describe('TaskReward Contract', async () => {
             );
 
             // Fast forward time to after endTime
-            await ethers.provider.send("evm_increaseTime", [endTime + 1]);
-            await ethers.provider.send("evm_mine", []);
+            await helperstime.increase(endTime + 1);
 
 
             await expect(taskReward.submitProof(
@@ -378,39 +375,282 @@ describe('TaskReward Contract', async () => {
 
     });
 
-    // describe('Task Status Management', () => {
-    //     it('Should complete task when max participants reached', async () => {
-    //         const endTime = Math.floor(Date.now() / 1000) + oneDay;
-    //         await taskReward.createTask(
-    //             0,
-    //             oneETH,
-    //             mockToken.target,
-    //             endTime,
-    //             1, // Only one participant
-    //             ethers.keccak256(ethers.toUtf8Bytes("targetHash")),
-    //             [],
-    //             0,
-    //             500000
-    //         );
+    describe('LIKE Proof Submission', () => {
+        let likeProof = getproof(likecast);
 
-    //         await ethers.provider.send("evm_increaseTime", [oneDay + 1]);
-    //         await ethers.provider.send("evm_mine", []);
+        it('Should verify and reward LIKE proof', async () => {
+            let taskId = await taskReward.taskIdCounter()
+            let targetHash_ = likeProof.rawmessage.reactionBody?.targetCastId?.hash;
+            let maxParticipants_ = 10
+            if (!targetHash_) {
+                throw new Error('Target hash is undefined');
+            }
+            let targetHash = ethers.hexlify(targetHash_);
+            
+            const endTime = await helperstime.latest() + oneDay;
+            await taskReward.createTask(
+                3, // TaskType.LIKE
+                oneETH,
+                mockToken.target,
+                endTime,
+                maxParticipants_,
+                targetHash,
+                [],
+                0,
+                500000
+            );
 
-    //         const recastProof = getproof(recast);
-    //         const tx = await taskReward.submitProof(
-    //             1, // taskId
-    //             user1.address,
-    //             {
-    //                 public_key: recastProof.public_key,
-    //                 signature_r: recastProof.signature_r,
-    //                 signature_s: recastProof.signature_s,
-    //                 message: recastProof.message
-    //             }
-    //         );
+            await helperstime.increase(endTime + 1);
 
-    //         await expect(tx)
-    //             .to.emit(taskReward, 'TaskStatusChanged')
-    //             .withArgs(1, 1); // TaskStatus.COMPLETED
-    //     });
-    // });
+            const tx = await taskReward.submitProof(
+                taskId,
+                user1.address,
+                {
+                    public_key: likeProof.public_key,
+                    signature_r: likeProof.signature_r,
+                    signature_s: likeProof.signature_s,
+                    message: likeProof.message
+                }
+            );
+
+            await expect(tx)
+                .to.emit(taskReward, 'RewardPaid')
+                .withArgs(taskId, user1.address, oneETH / BigInt(maxParticipants_), mockToken.target);
+        });
+    });
+
+    describe('REPLY Proof Submission', () => {
+        let replyProof = getproof(castadd);
+
+        it('Should verify and reward REPLY proof with required words and min length', async () => {
+            let taskId = await taskReward.taskIdCounter()
+            let targetHash_ = replyProof.rawmessage.castAddBody?.parentCastId?.hash;
+            let maxParticipants_ = 10
+            if (!targetHash_) {
+                throw new Error('Target hash is undefined');
+            }
+            let targetHash = ethers.hexlify(targetHash_);
+            
+            const endTime = await helperstime.latest() + oneDay;
+            const requiredWords = ["真不错", "啊"];
+            const minLength = 2;
+
+            await taskReward.createTask(
+                1, // TaskType.REPLY
+                oneETH,
+                mockToken.target,
+                endTime,
+                maxParticipants_,
+                targetHash,
+                requiredWords,
+                minLength,
+                500000
+            );
+
+            await helperstime.increase(endTime + 1);
+
+            const tx = await taskReward.submitProof(
+                taskId,
+                user1.address,
+                {
+                    public_key: replyProof.public_key,
+                    signature_r: replyProof.signature_r,
+                    signature_s: replyProof.signature_s,
+                    message: replyProof.message
+                }
+            );
+
+            await expect(tx)
+                .to.emit(taskReward, 'RewardPaid')
+                .withArgs(taskId, user1.address, oneETH / BigInt(maxParticipants_), mockToken.target);
+        });
+
+        it('should revert with MinLengthMismatch for REPLY', async () => {
+            let taskId = await taskReward.taskIdCounter()
+            let targetHash_ = replyProof.rawmessage.castAddBody?.parentCastId?.hash;
+            if (!targetHash_) {
+                throw new Error('Target hash is undefined');
+            }
+            let targetHash = ethers.hexlify(targetHash_);
+            
+            const endTime = await helperstime.latest() + oneDay;
+            const minLength = 1000; // Set a very large minimum length
+
+            await taskReward.createTask(
+                1, // TaskType.REPLY
+                oneETH,
+                mockToken.target,
+                endTime,
+                10,
+                targetHash,
+                [],
+                minLength,
+                500000
+            );
+
+            await helperstime.increase(endTime + 1);
+
+            await expect(
+                taskReward.submitProof(
+                    taskId,
+                    user1.address,
+                    {
+                        public_key: replyProof.public_key,
+                        signature_r: replyProof.signature_r,
+                        signature_s: replyProof.signature_s,
+                        message: replyProof.message
+                    }
+                )
+            ).to.be.revertedWithCustomError(taskReward, 'MinLengthMismatch');
+        });
+
+        it('should revert with RequiredWordsMismatch for REPLY', async () => {
+            let taskId = await taskReward.taskIdCounter()
+            let targetHash_ = replyProof.rawmessage.castAddBody?.parentCastId?.hash;
+            if (!targetHash_) {
+                throw new Error('Target hash is undefined');
+            }
+            let targetHash = ethers.hexlify(targetHash_);
+            
+            const endTime = await helperstime.latest() + oneDay;
+            const requiredWords = ["ThisWordWillDefinitelyNotBeInTheMessage123456"];
+
+            await taskReward.createTask(
+                1, // TaskType.REPLY
+                oneETH,
+                mockToken.target,
+                endTime,
+                10,
+                targetHash,
+                requiredWords,
+                0,
+                500000
+            );
+
+            await helperstime.increase(endTime + 1);
+
+            await expect(
+                taskReward.submitProof(
+                    taskId,
+                    user1.address,
+                    {
+                        public_key: replyProof.public_key,
+                        signature_r: replyProof.signature_r,
+                        signature_s: replyProof.signature_s,
+                        message: replyProof.message
+                    }
+                )
+            ).to.be.revertedWithCustomError(taskReward, 'RequiredWordsMismatch');
+        });
+    });
+
+    describe('NEW_CAST Proof Submission', () => {
+        let newcastProof = getproof(newcast);
+
+        it('Should verify and reward NEW_CAST proof with required words and min length', async () => {
+            let taskId = await taskReward.taskIdCounter()
+            let maxParticipants_ = 10
+            
+            const endTime = await helperstime.latest() + oneDay;
+            const requiredWords = ["hello", "world"];
+            const minLength = 10;
+
+            await taskReward.createTask(
+                2, // TaskType.NEW_CAST
+                oneETH,
+                mockToken.target,
+                endTime,
+                maxParticipants_,
+                zerotargetHash,
+                requiredWords,
+                minLength,
+                500000
+            );
+
+            await helperstime.increase(oneDay + 1);
+
+            const tx = await taskReward.submitProof(
+                taskId,
+                user1.address,
+                {
+                    public_key: newcastProof.public_key,
+                    signature_r: newcastProof.signature_r,
+                    signature_s: newcastProof.signature_s,
+                    message: newcastProof.message
+                }
+            );
+
+            await expect(tx)
+                .to.emit(taskReward, 'RewardPaid')
+                .withArgs(taskId, user1.address, oneETH / BigInt(maxParticipants_), mockToken.target);
+        });
+
+        it('should revert with MinLengthMismatch for NEW_CAST', async () => {
+            let taskId = await taskReward.taskIdCounter()
+            
+            const endTime = await helperstime.latest() + oneDay;
+            const minLength = 1000; // Set a very large minimum length
+
+            await taskReward.createTask(
+                2, // TaskType.NEW_CAST
+                oneETH,
+                mockToken.target,
+                endTime,
+                10,
+                zerotargetHash,
+                [],
+                minLength,
+                500000
+            );
+
+            await helperstime.increase(oneDay + 1);
+
+            await expect(
+                taskReward.submitProof(
+                    taskId,
+                    user1.address,
+                    {
+                        public_key: newcastProof.public_key,
+                        signature_r: newcastProof.signature_r,
+                        signature_s: newcastProof.signature_s,
+                        message: newcastProof.message
+                    }
+                )
+            ).to.be.revertedWithCustomError(taskReward, 'MinLengthMismatch');
+        });
+
+        it('should revert with RequiredWordsMismatch for NEW_CAST', async () => {
+            let taskId = await taskReward.taskIdCounter()
+            
+            const endTime = await helperstime.latest() + oneDay;
+            const requiredWords = ["ThisWordWillDefinitelyNotBeInTheMessage123456"];
+
+            await taskReward.createTask(
+                2, // TaskType.NEW_CAST
+                oneETH,
+                mockToken.target,
+                endTime,
+                10,
+                zerotargetHash,
+                requiredWords,
+                0,
+                500000
+            );
+
+            await helperstime.increase(oneDay + 1);
+
+            await expect(
+                taskReward.submitProof(
+                    taskId,
+                    user1.address,
+                    {
+                        public_key: newcastProof.public_key,
+                        signature_r: newcastProof.signature_r,
+                        signature_s: newcastProof.signature_s,
+                        message: newcastProof.message
+                    }
+                )
+            ).to.be.revertedWithCustomError(taskReward, 'RequiredWordsMismatch');
+        });
+    });
 });
