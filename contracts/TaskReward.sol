@@ -108,14 +108,15 @@ contract TaskReward is  ReentrancyGuard {
 
     // Errors
     error TaskNotFound();
-    error TaskNotEnded();
-    error TaskAlreadyCompleted();
+    error TaskNotExpired();
+    error TaskIsFullStaffed();
     error UserAlreadyClaimed();
     error InvalidProof();
     error InvalidReward();
     error InvalidEndtime();
     error WaitForEnd();
     error InvalidParticipants();
+    error InvaildTaskStatus();
     error InsufficientReward();
     error InvalidTokenAddress();
     error InvalidScore();
@@ -181,9 +182,9 @@ contract TaskReward is  ReentrancyGuard {
         Task storage task = tasks[taskId];
         if (task.creator == address(0)) revert TaskNotFound();
         if (block.timestamp < task.endtime) revert WaitForEnd();
-        if (task.status != TaskStatus.ACTIVE) revert TaskAlreadyCompleted();
         if (userClaimedTasks[taskId][user]) revert UserAlreadyClaimed();
-        if (task.completedCount >= task.maxParticipants) revert TaskAlreadyCompleted();
+        if (task.completedCount >= task.maxParticipants) revert TaskIsFullStaffed();
+        if (task.status != TaskStatus.ACTIVE) revert InvaildTaskStatus();
 
         _verifyProof(task, proof);
         
@@ -332,8 +333,8 @@ contract TaskReward is  ReentrancyGuard {
     function withdrawUnusedRewards(uint256 taskId) external  {
         Task storage task = tasks[taskId];
         if (task.creator == address(0)) revert TaskNotFound();
-        if (block.timestamp < task.endtime) revert TaskNotEnded();
-        if(task.status != TaskStatus.ACTIVE) revert TaskAlreadyCompleted();
+        if (block.timestamp < task.expiredtime) revert TaskNotExpired();
+        if(task.status != TaskStatus.ACTIVE) revert InvaildTaskStatus();
 
         if(task.completedCount >= task.maxParticipants)revert InsufficientReward();
         uint256 unusedRewards = task.perUserAmount * (task.maxParticipants - task.completedCount);
