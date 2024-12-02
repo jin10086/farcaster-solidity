@@ -3,6 +3,7 @@ pragma solidity ^0.8.9;
 
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "hardhat/console.sol";
 // import "./libraries/Blake3.sol";
 // import "./libraries/Ed25519.sol";
 // import "./protobufs/message.proto.sol";
@@ -201,7 +202,7 @@ contract TaskReward is  ReentrancyGuard {
         emit RewardPaid(taskId, user, task.perUserAmount, task.rewardToken);
     }
 
-    function _verifyProof(Task storage task, TaskProof calldata proof) internal  returns (bool) {
+    function _verifyProof(Task memory task, TaskProof calldata proof) internal returns (bool) {
 
         MessageData memory message_data;
         if (task.taskType == TaskType.RECAST || task.taskType == TaskType.LIKE) {
@@ -209,6 +210,9 @@ contract TaskReward is  ReentrancyGuard {
         } else{
             message_data =  farcasterVerify.verifyCastAddMessage(proof.public_key, proof.signature_r, proof.signature_s, proof.message);
         }
+
+        //TODO: 验证 开始时间以及结束时间.
+
 
         if (task.taskType == TaskType.RECAST) {
             if (!_verifyRecast(message_data, task)) revert InvalidProof();
@@ -229,9 +233,13 @@ contract TaskReward is  ReentrancyGuard {
         if (message_data.reaction_body.type_ != ReactionType.REACTION_TYPE_RECAST) revert InvalidTaskType();
 
         // 验证目标帖子 
-        bytes32 recastTargetHash = keccak256(abi.encodePacked(message_data.reaction_body.target_cast_id.hash_));
+        bytes memory hash = message_data.reaction_body.target_cast_id.hash_;
+        require(hash.length == 20, "Invalid hash length");
+        bytes20 recastTargetHash;
+        assembly {
+            recastTargetHash := mload(add(hash, 32))
+        }
         if (recastTargetHash != task.targetHash) revert TargetHashMismatch();
-
         return true;
     }
     
@@ -241,8 +249,13 @@ contract TaskReward is  ReentrancyGuard {
         if (message_data.reaction_body.type_ != ReactionType.REACTION_TYPE_LIKE) revert InvalidTaskType();
 
         // 验证目标帖子
-        bytes32 targetMessageHash = keccak256(abi.encodePacked(message_data.reaction_body.target_cast_id.hash_));
-        if (targetMessageHash != task.targetHash) revert TargetHashMismatch();
+        bytes memory hash = message_data.reaction_body.target_cast_id.hash_;
+        require(hash.length == 20, "Invalid hash length");
+        bytes20 castTargetHash;
+        assembly {
+            castTargetHash := mload(add(hash, 32))
+        }
+        if (castTargetHash != task.targetHash) revert TargetHashMismatch();
 
         return true;
     }
@@ -252,7 +265,12 @@ contract TaskReward is  ReentrancyGuard {
         if (message_data.type_ != MessageType.MESSAGE_TYPE_CAST_ADD) revert InvalidTaskType();
         
         // 验证是否是回复目标帖子
-        bytes32 replyTargetHash = keccak256(abi.encodePacked(message_data.cast_add_body.parent_cast_id.hash_));
+        bytes memory hash = message_data.cast_add_body.parent_cast_id.hash_;
+        require(hash.length == 20, "Invalid hash length");
+        bytes20 replyTargetHash;
+        assembly {
+            replyTargetHash := mload(add(hash, 32))
+        }
         if (replyTargetHash != task.targetHash) revert TargetHashMismatch();
 
         // 验证文本长度
@@ -273,8 +291,8 @@ contract TaskReward is  ReentrancyGuard {
         if (message_data.type_ != MessageType.MESSAGE_TYPE_CAST_ADD) revert InvalidTaskType();
         
         // 验证是否是新帖子（不是回复）
-        bytes32 newCastParentHash = keccak256(abi.encodePacked(message_data.cast_add_body.parent_cast_id.hash_));
-        if (newCastParentHash != bytes32(0)) revert InvalidTaskType(); 
+        bytes memory hash = message_data.cast_add_body.parent_cast_id.hash_;
+        if (hash.length != 0) revert InvalidTaskType();
 
         // 验证文本长度
         if (bytes(message_data.cast_add_body.text).length < task.minLength) revert MinLengthMismatch();
