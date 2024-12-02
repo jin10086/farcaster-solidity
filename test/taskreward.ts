@@ -1,6 +1,8 @@
 import { expect } from 'chai';
 import { ethers } from 'hardhat';
 import { TaskReward, FarcasterVerify, MockERC20 } from '../typechain-types';
+import {time as helperstime} from "@nomicfoundation/hardhat-network-helpers";
+
 
 // Import your test data and utils
 import { newcast, likecast, recast, castadd } from './rawdata';
@@ -327,6 +329,48 @@ describe('TaskReward Contract', async () => {
                     message: likecastproof.message
                 }
             )).to.be.revertedWithCustomError(taskReward, 'InvalidTaskType');
+
+        })
+
+        it('should revert with recast TargetHashMismatch', async () => {
+
+            let taskId = await taskReward.taskIdCounter()
+            let maxParticipants_ = 10
+            // Ensure tragetHash_ is defined and convert properly
+
+            
+            //Uint8Array to bytes20
+            let tragetHash = zerotargetHash;
+            console.log("task0 targetHash:::", tragetHash);
+            //lasttime	+   oneday
+            const endTime = await helperstime.latest() + oneDay;
+            await taskReward.createTask(
+                0, // TaskType.RECAST
+                oneETH,
+                mockToken.target,
+                endTime,
+                maxParticipants_,
+                tragetHash,
+                [],
+                0,
+                500000
+            );
+
+            // Fast forward time to after endTime
+            await ethers.provider.send("evm_increaseTime", [endTime + 1]);
+            await ethers.provider.send("evm_mine", []);
+
+
+            await expect(taskReward.submitProof(
+                taskId, // taskId
+                user1.address,
+                {
+                    public_key: recastProof.public_key,
+                    signature_r: recastProof.signature_r,
+                    signature_s: recastProof.signature_s,
+                    message: recastProof.message
+                }
+            )).to.be.revertedWithCustomError(taskReward, 'TargetHashMismatch');
 
         })
 
