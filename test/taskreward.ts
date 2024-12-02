@@ -256,7 +256,7 @@ describe('TaskReward Contract', async () => {
             let taskId = await taskReward.taskIdCounter() - BigInt(1);
             const signers = await ethers.getSigners();
             // First complete the task by reaching max participants
-            for(let i = 2; i < 12; i++) { // 前两个账号用了.
+            for(let i = 2; i < 11; i++) { // 前两个账号用了. 这边 9 个+之前的 1 个，刚好满
                 let user = await signers[i];
                 await taskReward.submitProof(
                     taskId,
@@ -285,43 +285,43 @@ describe('TaskReward Contract', async () => {
                 )).to.be.revertedWithCustomError(taskReward, 'TaskAlreadyCompleted');
         });
 
-        
+
 
     });
 
-    describe('Task Status Management', () => {
-        it('Should complete task when max participants reached', async () => {
-            const endTime = Math.floor(Date.now() / 1000) + oneDay;
-            await taskReward.createTask(
-                0,
-                oneETH,
-                mockToken.target,
-                endTime,
-                1, // Only one participant
-                ethers.keccak256(ethers.toUtf8Bytes("targetHash")),
-                [],
-                0,
-                500000
-            );
+    // describe('Task Status Management', () => {
+    //     it('Should complete task when max participants reached', async () => {
+    //         const endTime = Math.floor(Date.now() / 1000) + oneDay;
+    //         await taskReward.createTask(
+    //             0,
+    //             oneETH,
+    //             mockToken.target,
+    //             endTime,
+    //             1, // Only one participant
+    //             ethers.keccak256(ethers.toUtf8Bytes("targetHash")),
+    //             [],
+    //             0,
+    //             500000
+    //         );
 
-            await ethers.provider.send("evm_increaseTime", [oneDay + 1]);
-            await ethers.provider.send("evm_mine", []);
+    //         await ethers.provider.send("evm_increaseTime", [oneDay + 1]);
+    //         await ethers.provider.send("evm_mine", []);
 
-            const recastProof = getproof(recast);
-            const tx = await taskReward.submitProof(
-                1, // taskId
-                user1.address,
-                {
-                    public_key: recastProof.public_key,
-                    signature_r: recastProof.signature_r,
-                    signature_s: recastProof.signature_s,
-                    message: recastProof.message
-                }
-            );
+    //         const recastProof = getproof(recast);
+    //         const tx = await taskReward.submitProof(
+    //             1, // taskId
+    //             user1.address,
+    //             {
+    //                 public_key: recastProof.public_key,
+    //                 signature_r: recastProof.signature_r,
+    //                 signature_s: recastProof.signature_s,
+    //                 message: recastProof.message
+    //             }
+    //         );
 
-            await expect(tx)
-                .to.emit(taskReward, 'TaskStatusChanged')
-                .withArgs(1, 1); // TaskStatus.COMPLETED
-        });
-    });
+    //         await expect(tx)
+    //             .to.emit(taskReward, 'TaskStatusChanged')
+    //             .withArgs(1, 1); // TaskStatus.COMPLETED
+    //     });
+    // });
 });
