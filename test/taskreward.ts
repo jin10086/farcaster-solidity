@@ -252,7 +252,7 @@ describe('TaskReward Contract', async () => {
 
         })
 
-        it('should revert with TaskAlreadyCompleted', async () => {
+        it('should revert with TaskIsFullStaffed', async () => {
             let taskId = await taskReward.taskIdCounter() - BigInt(1);
             const signers = await ethers.getSigners();
             // First complete the task by reaching max participants
@@ -282,7 +282,7 @@ describe('TaskReward Contract', async () => {
                         signature_s: recastProof.signature_s,
                         message: recastProof.message
                     }
-                )).to.be.revertedWithCustomError(taskReward, 'TaskAlreadyCompleted');
+                )).to.be.revertedWithCustomError(taskReward, 'TaskIsFullStaffed');
         });
 
 
