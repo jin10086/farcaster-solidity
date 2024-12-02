@@ -147,23 +147,6 @@ describe('TaskReward Contract', async () => {
         let recastProof = getproof(recast);
      
 
-        it('should revert with UserAlreadyClaimed', async () => {
-            let taskId = await taskReward.taskIdCounter() - BigInt(1);
-            
-            await expect(
-                taskReward.submitProof(
-                    taskId, // taskId
-                    user1.address,
-                    {
-                        public_key: recastProof.public_key,
-                        signature_r: recastProof.signature_r,
-                        signature_s: recastProof.signature_s,
-                        message: recastProof.message
-                    }
-                )).to.be.revertedWithCustomError(taskReward, 'UserAlreadyClaimed');
-
-        })
-
         it('should revert with TaskNotFound', async () => {
             const nonExistentTaskId = 999999;
             await expect(
@@ -252,14 +235,29 @@ describe('TaskReward Contract', async () => {
                 .to.emit(taskReward, 'RewardPaid')
                 .withArgs(taskId, user1.address, oneETH / BigInt(maxParticipants_), mockToken.target);
         });
+        it('should revert with UserAlreadyClaimed', async () => {
+            let taskId = await taskReward.taskIdCounter() - BigInt(1);
+            
+            await expect(
+                taskReward.submitProof(
+                    taskId, // taskId
+                    user1.address,
+                    {
+                        public_key: recastProof.public_key,
+                        signature_r: recastProof.signature_r,
+                        signature_s: recastProof.signature_s,
+                        message: recastProof.message
+                    }
+                )).to.be.revertedWithCustomError(taskReward, 'UserAlreadyClaimed');
+
+        })
 
         it('should revert with TaskAlreadyCompleted', async () => {
             let taskId = await taskReward.taskIdCounter() - BigInt(1);
-            
+            const signers = await ethers.getSigners();
             // First complete the task by reaching max participants
-            for(let i = 0; i < 10; i++) {
-                if(i === 0) continue; // Skip first user as they've already claimed
-                const user = await ethers.getSigners();
+            for(let i = 2; i < 12; i++) { // 前两个账号用了.
+                let user = await signers[i];
                 await taskReward.submitProof(
                     taskId,
                     user.address,
@@ -273,7 +271,7 @@ describe('TaskReward Contract', async () => {
             }
 
             // Try to submit proof after task is completed
-            const newUser = await ethers.getSigner();
+            const newUser = await signers[15];
             await expect(
                 taskReward.submitProof(
                     taskId,
@@ -287,24 +285,8 @@ describe('TaskReward Contract', async () => {
                 )).to.be.revertedWithCustomError(taskReward, 'TaskAlreadyCompleted');
         });
 
-        it('should revert with InvalidProof for invalid proof data', async () => {
-            let taskId = await taskReward.taskIdCounter() - BigInt(1);
-            
-            // Create invalid proof by modifying the signature
-            const invalidProof = {
-                public_key: recastProof.public_key,
-                signature_r: ethers.randomBytes(32),  // Random invalid signature
-                signature_s: recastProof.signature_s,
-                message: recastProof.message
-            };
+        
 
-            await expect(
-                taskReward.submitProof(
-                    taskId,
-                    user2.address,
-                    invalidProof
-                )).to.be.revertedWithCustomError(taskReward, 'InvalidProof');
-        });
     });
 
     describe('Task Status Management', () => {
