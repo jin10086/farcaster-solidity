@@ -53,7 +53,7 @@ contract TaskReward is  ReentrancyGuard {
         TaskStatus status;
         
         // Task specific parameters
-        bytes32 targetHash;      // For RECAST, REPLY, and LIKE
+        bytes20 targetHash;      // For RECAST, REPLY, and LIKE
         string[] requiredWords;  // For REPLY and NEW_CAST
         uint256 minLength;       // For REPLY and NEW_CAST
         uint256 score;  //用户的分数.  0-1000000 https://docs.neynar.com/docs/address-user-score-contract
@@ -81,7 +81,7 @@ contract TaskReward is  ReentrancyGuard {
         uint256 endtime,  
         uint256 maxParticipants,
         TaskStatus status,
-        bytes32 targetHash,
+        bytes20 targetHash,
         string[] requiredWords,
         uint256 minLength,
         uint256 score
@@ -133,7 +133,7 @@ contract TaskReward is  ReentrancyGuard {
         address rewardToken,
         uint256 endtime,
         uint256 maxParticipants,
-        bytes32 targetHash,
+        bytes20 targetHash,
         string[] memory requiredWords,
         uint256 minLength,
         uint256 score
