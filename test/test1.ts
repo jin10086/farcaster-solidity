@@ -2,6 +2,31 @@ import { expect } from 'chai';
 import { ethers } from 'hardhat';
 import { FarcasterVerify } from '../typechain-types';
 import { MessageData, MessageType, FarcasterNetwork } from '@farcaster/core';
+import { newcast } from './rawdata';
+
+import { newcast, likecast, recast, castadd } from './rawdata';
+
+
+
+function getproof(data: any) {
+  const signatureBuffer = Buffer.from(data.signature, 'base64');
+
+  let message = MessageData.fromJSON(data.data);
+
+  return {
+    public_key: data.signer,
+    signature_r: "0x"+signatureBuffer.slice(0, 32).toString('hex'),
+    signature_s: "0x"+ signatureBuffer.slice(32, 64).toString('hex'),
+    message: MessageData.encode(message).finish()
+  };
+}
+
+let newcastproof = getproof(newcast);
+let likecastproof = getproof(likecast);
+let recastproof = getproof(recast);
+let castaddproof = getproof(castadd);
+
+
 
 describe('Test real message', async () => {
   let test:FarcasterVerify
@@ -33,7 +58,7 @@ describe('Test real message', async () => {
     test = await FarcasterVerify.deploy();
   });
 
-  it('Verify real cast', async () => {
+  it('Verify manual real cast', async () => {
     // 原始签名（Base64格式）
     const signatureBase64 = "ASwnupcSGRnER5s9cYDHMpq2RNFUQi+Hol3eGgcHqLH/UtzNL7qHtY6sT8uc/MHKXMSetsERXCUaYABtM65BBw==";
     
@@ -84,4 +109,24 @@ describe('Test real message', async () => {
         message_data.castAddBody?.mentions
       );
   });
+
+  it('Verify auto real cast', async () => {
+
+    console.log(newcastproof);
+    const tx = test.verifyCastAddMessage(
+        newcastproof.public_key,
+        newcastproof.signature_r,
+        newcastproof.signature_s,
+        newcastproof.message
+      );
+  
+      await expect(tx)
+        .to.emit(test, 'MessageCastAddVerified')
+        .withArgs(
+            newcast.data.fid,
+            newcast.data.castAddBody?.text,
+            newcast.data.castAddBody?.mentions
+        );
+    
+  })
 });
