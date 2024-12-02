@@ -48,7 +48,7 @@ export const recast = {
   "data": {
     "type": "MESSAGE_TYPE_REACTION_ADD",
     "fid": 880794,
-    "timestamp": 123425973,
+    "timestamp": 123674841,
     "network": "FARCASTER_NETWORK_MAINNET",
     "reactionBody": {
       "type": "REACTION_TYPE_RECAST",
@@ -58,9 +58,9 @@ export const recast = {
       }
     }
   },
-  "hash": "0x2e34a7e835cf20c19815b35f9e95f80da5c0a199",
+  "hash": "0xf5d902f9d4d4b0ecf363a605dbfbed671065239f",
   "hashScheme": "HASH_SCHEME_BLAKE3",
-  "signature": "L3EHe0Uw4lfbK/IFdAoDzmqcxZ/raYSv3Kf6DXIeR5Huwfa0szcyZNKhduA5USGVB34clY3Q1s8PPHYV7K1CAQ==",
+  "signature": "sDTpw92JeXcK0RGtS6R+BZb0wIyDu0Oiq+8oIc9ItljtyBcLm9o6zEsBMqx82nQLC9G6qoah4FXz3CYiwfbaBw==",
   "signatureScheme": "SIGNATURE_SCHEME_ED25519",
   "signer": "0xeaf4d80bbd2d32701a14be495c9581eff3ed1779972d75119580ef4241b9b2fd"
 }
