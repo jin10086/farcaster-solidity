@@ -2,7 +2,6 @@ import { expect } from 'chai';
 import { ethers } from 'hardhat';
 import { FarcasterVerify } from '../typechain-types';
 import { MessageData, MessageType, FarcasterNetwork } from '@farcaster/core';
-import { newcast } from './rawdata';
 
 import { newcast, likecast, recast, castadd } from './rawdata';
 
@@ -17,7 +16,8 @@ function getproof(data: any) {
     public_key: data.signer,
     signature_r: "0x"+signatureBuffer.slice(0, 32).toString('hex'),
     signature_s: "0x"+ signatureBuffer.slice(32, 64).toString('hex'),
-    message: MessageData.encode(message).finish()
+    message: MessageData.encode(message).finish(),
+    rawmessage: message
   };
 }
 
@@ -112,21 +112,63 @@ describe('Test real message', async () => {
 
   it('Verify auto real cast', async () => {
 
-    console.log(newcastproof);
+    let data = newcastproof
     const tx = test.verifyCastAddMessage(
-        newcastproof.public_key,
-        newcastproof.signature_r,
-        newcastproof.signature_s,
-        newcastproof.message
+      data.public_key,
+      data.signature_r,
+      data.signature_s,
+      data.message
       );
   
       await expect(tx)
         .to.emit(test, 'MessageCastAddVerified')
         .withArgs(
-            newcast.data.fid,
-            newcast.data.castAddBody?.text,
-            newcast.data.castAddBody?.mentions
+          data.rawmessage.fid,
+          data.rawmessage.castAddBody?.text,
+          data.rawmessage.castAddBody?.mentions
         );
+    
+  })
+  it('Verify auto recast', async () => {
+
+    let data = recastproof
+    // console.log("raw message:::",data.rawmessage)
+    const tx = test.verifyReactionAddMessage(
+        data.public_key,
+        data.signature_r,
+        data.signature_s,
+        data.message
+      );
+  
+      await expect(tx)
+        .to.emit(test, 'MessageReactionAddVerified')
+        // .withArgs(
+        //     data.rawmessage.fid,
+        //     data.rawmessage.
+        //     data.rawmessage.castAddBody?.mentions
+        // );
+    
+  })
+
+
+  it('Verify auto castadd', async () => {
+
+    let data = castaddproof
+    // console.log("raw message:::",data.rawmessage)
+    const tx = test.verifyCastAddMessage(
+      data.public_key,
+      data.signature_r,
+      data.signature_s,
+      data.message
+      );
+  
+      await expect(tx)
+        .to.emit(test, 'MessageCastAddVerified')
+        // .withArgs(
+        //     data.rawmessage.fid,
+        //     data.rawmessage.
+        //     data.rawmessage.castAddBody?.mentions
+        // );
     
   })
 });
