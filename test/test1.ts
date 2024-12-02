@@ -102,66 +102,61 @@ describe('Test real message', async () => {
   it('Verify auto recast', async () => {
 
     let data = recastproof
-    try {
-      console.log("\n=== Testing Recast ===");
+    
       const tx = await test.verifyReactionAddMessage(
           data.public_key,
           data.signature_r,
           data.signature_s,
           data.message
       );
-      const receipt = await tx.wait();
-      console.log("Transaction receipt:", receipt);
-    } catch (error: any) {
-      console.log("Transaction failed with error:", error.message);
-      if (error.data) {
-        console.log("Contract error data:", error.data);
-      }
-      throw error;
-    }
+      await expect(tx)
+        .to.emit(test, 'MessageReactionAddVerified')
+        .withArgs(
+          data.rawmessage.fid,
+          data.rawmessage.reactionBody?.type,
+          data.rawmessage.reactionBody?.targetCastId?.fid,
+          data.rawmessage.reactionBody?.targetCastId?.hash
+        );
+      
+    
   })
 
   it('Verify auto castadd', async () => {
 
     let data = castaddproof
-    try {
-      console.log("\n=== Testing CastAdd ===");
+    
       const tx = await test.verifyCastAddMessage(
         data.public_key,
         data.signature_r,
         data.signature_s,
         data.message
       );
-      const receipt = await tx.wait();
-      console.log("Transaction receipt:", receipt);
-    } catch (error: any) {
-      console.log("Transaction failed with error:", error.message);
-      if (error.data) {
-        console.log("Contract error data:", error.data);
-      }
-      throw error;
-    }
+      await expect(tx)
+        .to.emit(test, 'MessageCastAddVerified')
+        .withArgs(
+          data.rawmessage.fid,
+          data.rawmessage.castAddBody?.text,
+          data.rawmessage.castAddBody?.mentions
+        );
   })
 
   it('Verify auto Like', async () => {
 
     let data = likecastproof
-    try {
-      console.log("\n=== Testing Like ===");
+   
       const tx = await test.verifyReactionAddMessage(  // Like 是 reaction 类型
         data.public_key,
         data.signature_r,
         data.signature_s,
         data.message
       );
-      const receipt = await tx.wait();
-      console.log("Transaction receipt:", receipt);
-    } catch (error: any) {
-      console.log("Transaction failed with error:", error.message);
-      if (error.data) {
-        console.log("Contract error data:", error.data);
-      }
-      throw error;
-    }
+      await expect(tx)
+        .to.emit(test, 'MessageReactionAddVerified')
+        .withArgs(
+          data.rawmessage.fid,
+          data.rawmessage.reactionBody?.type,
+          data.rawmessage.reactionBody?.targetCastId?.fid,
+          data.rawmessage.reactionBody?.targetCastId?.hash
+        );
   })
 });
