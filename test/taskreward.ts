@@ -92,6 +92,39 @@ describe('TaskReward Contract', async () => {
                 );
         });
 
+        it('Should create a RECAST task with targetHash successfully', async () => {
+            const endTime = Math.floor(Date.now() / 1000) + oneDay;
+            const targetHash = "0x9f22514691c2375e25ae09263512ec7ec2c8e5de";
+            const tx = await taskReward.createTask(
+                0, // TaskType.RECAST
+                oneETH,
+                mockToken.target,
+                endTime,
+                10, // maxParticipants
+                targetHash,
+                [], // requiredWords
+                0, // minLength
+                500000 // score
+            );
+
+            await expect(tx)
+                .to.emit(taskReward, 'TaskCreated')
+                .withArgs(
+                    1, // taskId
+                    owner.address,
+                    0, // TaskType.RECAST
+                    oneETH,
+                    mockToken.target,
+                    endTime,
+                    10,
+                    0, // TaskStatus.ACTIVE
+                    targetHash,
+                    [],
+                    0,
+                    500000
+                );
+        });
+
         it('Should revert with invalid parameters', async () => {
             const endTime = Math.floor(Date.now() / 1000) - oneDay; // Past time
             await expect(
@@ -113,18 +146,23 @@ describe('TaskReward Contract', async () => {
     describe('Proof Submission', () => {
         it('Should verify and reward RECAST proof', async () => {
 
-            let recastproof = getproof(recast);
-            let tragetHash_ = recastproof.rawmessage.reactionBody?.targetCastId?.hash;
-            //Uint8Array to bytes20
-            let tragetHash = ethers.keccak256(tragetHash_);
-            console.log(tragetHash)
+            let recastProof = getproof(recast);
+            let tragetHash_ = recastProof.rawmessage.reactionBody?.targetCastId?.hash;
+            let maxParticipants_ = 10
+
+            // Ensure tragetHash_ is defined and convert properly
+            if (!tragetHash_) {
+                throw new Error('Target hash is undefined');
+            }
+            let tragetHash = ethers.hexlify(tragetHash_);
+            console.log("task0 targetHash:::",tragetHash);
             const endTime = Math.floor(Date.now() / 1000) + oneDay;
             await taskReward.createTask(
                 0, // TaskType.RECAST
                 oneETH,
                 mockToken.target,
                 endTime,
-                10,
+                maxParticipants_,
                 tragetHash,
                 [],
                 0,
@@ -135,7 +173,6 @@ describe('TaskReward Contract', async () => {
             await ethers.provider.send("evm_increaseTime", [oneDay + 1]);
             await ethers.provider.send("evm_mine", []);
 
-            const recastProof = getproof(recast);
             const tx = await taskReward.submitProof(
                 0, // taskId
                 user1.address,
@@ -145,11 +182,11 @@ describe('TaskReward Contract', async () => {
                     signature_s: recastProof.signature_s,
                     message: recastProof.message
                 }
-            );
+            );            
 
             await expect(tx)
                 .to.emit(taskReward, 'RewardPaid')
-                .withArgs(0, user1.address, oneETH.div(10), mockToken.target);
+                .withArgs(0, user1.address, oneETH/BigInt(maxParticipants_), mockToken.target);
         });
     });
 
