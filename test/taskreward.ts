@@ -143,20 +143,20 @@ describe('TaskReward Contract', async () => {
         });
     });
 
-    describe('Proof Submission', () => {
+    describe('RECAST Proof Submission', () => {
+        let recastProof = getproof(recast);
         it('Should verify and reward RECAST proof', async () => {
 
-            let recastProof = getproof(recast);
+            let taskId = await taskReward.taskIdCounter()
             let tragetHash_ = recastProof.rawmessage.reactionBody?.targetCastId?.hash;
             let maxParticipants_ = 10
-
             // Ensure tragetHash_ is defined and convert properly
             if (!tragetHash_) {
                 throw new Error('Target hash is undefined');
             }
             //Uint8Array to bytes20
             let tragetHash = ethers.hexlify(tragetHash_);
-            console.log("task0 targetHash:::",tragetHash);
+            console.log("task0 targetHash:::", tragetHash);
             const endTime = Math.floor(Date.now() / 1000) + oneDay;
             await taskReward.createTask(
                 0, // TaskType.RECAST
@@ -170,14 +170,12 @@ describe('TaskReward Contract', async () => {
                 500000
             );
 
-            let taskIdCounter = await taskReward.taskIdCounter()
-
             // Fast forward time to after endTime
             await ethers.provider.send("evm_increaseTime", [oneDay + 1]);
             await ethers.provider.send("evm_mine", []);
 
             const tx = await taskReward.submitProof(
-                taskIdCounter -  BigInt(1), // taskId
+                taskId, // taskId
                 user1.address,
                 {
                     public_key: recastProof.public_key,
@@ -185,12 +183,31 @@ describe('TaskReward Contract', async () => {
                     signature_s: recastProof.signature_s,
                     message: recastProof.message
                 }
-            );            
+            );
 
             await expect(tx)
                 .to.emit(taskReward, 'RewardPaid')
-                .withArgs(0, user1.address, oneETH/BigInt(maxParticipants_), mockToken.target);
+                .withArgs(taskId, user1.address, oneETH / BigInt(maxParticipants_), mockToken.target);
         });
+
+        it('should revert with UserAlreadyClaimed', async () => {
+            let taskId = await taskReward.taskIdCounter() - BigInt(1);
+            await expect(
+                taskReward.submitProof(
+                    taskId, // taskId
+                    user1.address,
+                    {
+                        public_key: recastProof.public_key,
+                        signature_r: recastProof.signature_r,
+                        signature_s: recastProof.signature_s,
+                        message: recastProof.message
+                    }
+                )).to.be.revertedWithCustomError(taskReward, 'UserAlreadyClaimed');
+
+        })
+
+
+
     });
 
     describe('Task Status Management', () => {
