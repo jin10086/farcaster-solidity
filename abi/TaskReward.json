@@ -1,0 +1,603 @@
+[
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "_farcasterVerifyAddress",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "nonpayable",
+    "type": "constructor"
+  },
+  {
+    "inputs": [],
+    "name": "InsufficientReward",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "InvalidEndtime",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "InvalidParticipants",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "InvalidProof",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "InvalidReward",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "InvalidScore",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "InvalidTaskType",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "InvalidTokenAddress",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "MinLengthMismatch",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "RequiredWordsMismatch",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "TargetHashMismatch",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "TaskAlreadyCompleted",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "TaskNotEnded",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "TaskNotFound",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "UserAlreadyClaimed",
+    "type": "error"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "uint256",
+        "name": "taskId",
+        "type": "uint256"
+      },
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "recipient",
+        "type": "address"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "amount",
+        "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "internalType": "address",
+        "name": "token",
+        "type": "address"
+      }
+    ],
+    "name": "RewardPaid",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "uint256",
+        "name": "taskId",
+        "type": "uint256"
+      },
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "creator",
+        "type": "address"
+      },
+      {
+        "indexed": false,
+        "internalType": "enum TaskReward.TaskType",
+        "name": "taskType",
+        "type": "uint8"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "reward",
+        "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "internalType": "address",
+        "name": "rewardToken",
+        "type": "address"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "endtime",
+        "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "maxParticipants",
+        "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "internalType": "enum TaskReward.TaskStatus",
+        "name": "status",
+        "type": "uint8"
+      },
+      {
+        "indexed": false,
+        "internalType": "bytes32",
+        "name": "targetHash",
+        "type": "bytes32"
+      },
+      {
+        "indexed": false,
+        "internalType": "string[]",
+        "name": "requiredWords",
+        "type": "string[]"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "minLength",
+        "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "score",
+        "type": "uint256"
+      }
+    ],
+    "name": "TaskCreated",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "uint256",
+        "name": "taskId",
+        "type": "uint256"
+      },
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "creator",
+        "type": "address"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "returnedRewards",
+        "type": "uint256"
+      }
+    ],
+    "name": "TaskExpired",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "uint256",
+        "name": "taskId",
+        "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "internalType": "enum TaskReward.TaskStatus",
+        "name": "status",
+        "type": "uint8"
+      }
+    ],
+    "name": "TaskStatusChanged",
+    "type": "event"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "enum TaskReward.TaskType",
+        "name": "taskType",
+        "type": "uint8"
+      },
+      {
+        "internalType": "uint256",
+        "name": "reward",
+        "type": "uint256"
+      },
+      {
+        "internalType": "address",
+        "name": "rewardToken",
+        "type": "address"
+      },
+      {
+        "internalType": "uint256",
+        "name": "endtime",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "maxParticipants",
+        "type": "uint256"
+      },
+      {
+        "internalType": "bytes32",
+        "name": "targetHash",
+        "type": "bytes32"
+      },
+      {
+        "internalType": "string[]",
+        "name": "requiredWords",
+        "type": "string[]"
+      },
+      {
+        "internalType": "uint256",
+        "name": "minLength",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "score",
+        "type": "uint256"
+      }
+    ],
+    "name": "createTask",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "payable",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "farcasterVerify",
+    "outputs": [
+      {
+        "internalType": "contract IFarcasterVerify",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "taskId",
+        "type": "uint256"
+      }
+    ],
+    "name": "getTask",
+    "outputs": [
+      {
+        "components": [
+          {
+            "internalType": "address",
+            "name": "creator",
+            "type": "address"
+          },
+          {
+            "internalType": "enum TaskReward.TaskType",
+            "name": "taskType",
+            "type": "uint8"
+          },
+          {
+            "internalType": "uint256",
+            "name": "reward",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "perUserAmount",
+            "type": "uint256"
+          },
+          {
+            "internalType": "address",
+            "name": "rewardToken",
+            "type": "address"
+          },
+          {
+            "internalType": "uint256",
+            "name": "endtime",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "expiredtime",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "maxParticipants",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "completedCount",
+            "type": "uint256"
+          },
+          {
+            "internalType": "enum TaskReward.TaskStatus",
+            "name": "status",
+            "type": "uint8"
+          },
+          {
+            "internalType": "bytes32",
+            "name": "targetHash",
+            "type": "bytes32"
+          },
+          {
+            "internalType": "string[]",
+            "name": "requiredWords",
+            "type": "string[]"
+          },
+          {
+            "internalType": "uint256",
+            "name": "minLength",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "score",
+            "type": "uint256"
+          }
+        ],
+        "internalType": "struct TaskReward.Task",
+        "name": "",
+        "type": "tuple"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "taskId",
+        "type": "uint256"
+      },
+      {
+        "internalType": "address",
+        "name": "user",
+        "type": "address"
+      }
+    ],
+    "name": "hasCompleted",
+    "outputs": [
+      {
+        "internalType": "bool",
+        "name": "",
+        "type": "bool"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "taskId",
+        "type": "uint256"
+      },
+      {
+        "internalType": "address",
+        "name": "user",
+        "type": "address"
+      },
+      {
+        "components": [
+          {
+            "internalType": "bytes32",
+            "name": "public_key",
+            "type": "bytes32"
+          },
+          {
+            "internalType": "bytes32",
+            "name": "signature_r",
+            "type": "bytes32"
+          },
+          {
+            "internalType": "bytes32",
+            "name": "signature_s",
+            "type": "bytes32"
+          },
+          {
+            "internalType": "bytes",
+            "name": "message",
+            "type": "bytes"
+          }
+        ],
+        "internalType": "struct TaskReward.TaskProof",
+        "name": "proof",
+        "type": "tuple"
+      }
+    ],
+    "name": "submitProof",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "taskIdCounter",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "name": "tasks",
+    "outputs": [
+      {
+        "internalType": "address",
+        "name": "creator",
+        "type": "address"
+      },
+      {
+        "internalType": "enum TaskReward.TaskType",
+        "name": "taskType",
+        "type": "uint8"
+      },
+      {
+        "internalType": "uint256",
+        "name": "reward",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "perUserAmount",
+        "type": "uint256"
+      },
+      {
+        "internalType": "address",
+        "name": "rewardToken",
+        "type": "address"
+      },
+      {
+        "internalType": "uint256",
+        "name": "endtime",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "expiredtime",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "maxParticipants",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "completedCount",
+        "type": "uint256"
+      },
+      {
+        "internalType": "enum TaskReward.TaskStatus",
+        "name": "status",
+        "type": "uint8"
+      },
+      {
+        "internalType": "bytes32",
+        "name": "targetHash",
+        "type": "bytes32"
+      },
+      {
+        "internalType": "uint256",
+        "name": "minLength",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "score",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      },
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "name": "userClaimedTasks",
+    "outputs": [
+      {
+        "internalType": "bool",
+        "name": "",
+        "type": "bool"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "taskId",
+        "type": "uint256"
+      }
+    ],
+    "name": "withdrawUnusedRewards",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  }
+]

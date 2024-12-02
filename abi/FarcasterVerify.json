@@ -1,0 +1,1004 @@
+[
+  {
+    "inputs": [],
+    "name": "InvalidEncoding",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "InvalidMessageType",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "InvalidSignature",
+    "type": "error"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": false,
+        "internalType": "uint64",
+        "name": "fid",
+        "type": "uint64"
+      },
+      {
+        "indexed": false,
+        "internalType": "string",
+        "name": "text",
+        "type": "string"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint64[]",
+        "name": "mentions",
+        "type": "uint64[]"
+      }
+    ],
+    "name": "MessageCastAddVerified",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": false,
+        "internalType": "uint64",
+        "name": "fid",
+        "type": "uint64"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint32",
+        "name": "button_index",
+        "type": "uint32"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint64",
+        "name": "target_fid",
+        "type": "uint64"
+      },
+      {
+        "indexed": false,
+        "internalType": "bytes",
+        "name": "target_hash",
+        "type": "bytes"
+      },
+      {
+        "indexed": false,
+        "internalType": "bytes",
+        "name": "url",
+        "type": "bytes"
+      },
+      {
+        "indexed": false,
+        "internalType": "bytes",
+        "name": "input_text",
+        "type": "bytes"
+      }
+    ],
+    "name": "MessageFrameActionBodyVerified",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": false,
+        "internalType": "uint64",
+        "name": "fid",
+        "type": "uint64"
+      },
+      {
+        "indexed": false,
+        "internalType": "enum ReactionType",
+        "name": "reaction_type",
+        "type": "uint8"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint64",
+        "name": "target_fid",
+        "type": "uint64"
+      },
+      {
+        "indexed": false,
+        "internalType": "bytes",
+        "name": "target_hash",
+        "type": "bytes"
+      }
+    ],
+    "name": "MessageReactionAddVerified",
+    "type": "event"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "bytes32",
+        "name": "public_key",
+        "type": "bytes32"
+      },
+      {
+        "internalType": "bytes32",
+        "name": "signature_r",
+        "type": "bytes32"
+      },
+      {
+        "internalType": "bytes32",
+        "name": "signature_s",
+        "type": "bytes32"
+      },
+      {
+        "internalType": "bytes",
+        "name": "message",
+        "type": "bytes"
+      }
+    ],
+    "name": "verifyCastAddMessage",
+    "outputs": [
+      {
+        "components": [
+          {
+            "internalType": "enum MessageType",
+            "name": "type_",
+            "type": "uint8"
+          },
+          {
+            "internalType": "uint64",
+            "name": "fid",
+            "type": "uint64"
+          },
+          {
+            "internalType": "uint32",
+            "name": "timestamp",
+            "type": "uint32"
+          },
+          {
+            "internalType": "enum FarcasterNetwork",
+            "name": "network",
+            "type": "uint8"
+          },
+          {
+            "components": [
+              {
+                "internalType": "string",
+                "name": "embeds_deprecated",
+                "type": "string"
+              },
+              {
+                "internalType": "uint64[]",
+                "name": "mentions",
+                "type": "uint64[]"
+              },
+              {
+                "components": [
+                  {
+                    "internalType": "uint64",
+                    "name": "fid",
+                    "type": "uint64"
+                  },
+                  {
+                    "internalType": "bytes",
+                    "name": "hash_",
+                    "type": "bytes"
+                  }
+                ],
+                "internalType": "struct CastId",
+                "name": "parent_cast_id",
+                "type": "tuple"
+              },
+              {
+                "internalType": "string",
+                "name": "text",
+                "type": "string"
+              },
+              {
+                "internalType": "uint32[]",
+                "name": "mentions_positions",
+                "type": "uint32[]"
+              },
+              {
+                "components": [
+                  {
+                    "internalType": "string",
+                    "name": "url",
+                    "type": "string"
+                  },
+                  {
+                    "components": [
+                      {
+                        "internalType": "uint64",
+                        "name": "fid",
+                        "type": "uint64"
+                      },
+                      {
+                        "internalType": "bytes",
+                        "name": "hash_",
+                        "type": "bytes"
+                      }
+                    ],
+                    "internalType": "struct CastId",
+                    "name": "cast_id",
+                    "type": "tuple"
+                  }
+                ],
+                "internalType": "struct Embed[]",
+                "name": "embeds",
+                "type": "tuple[]"
+              },
+              {
+                "internalType": "string",
+                "name": "parent_url",
+                "type": "string"
+              }
+            ],
+            "internalType": "struct CastAddBody",
+            "name": "cast_add_body",
+            "type": "tuple"
+          },
+          {
+            "internalType": "bool",
+            "name": "empty_cast_remove_body",
+            "type": "bool"
+          },
+          {
+            "components": [
+              {
+                "internalType": "enum ReactionType",
+                "name": "type_",
+                "type": "uint8"
+              },
+              {
+                "components": [
+                  {
+                    "internalType": "uint64",
+                    "name": "fid",
+                    "type": "uint64"
+                  },
+                  {
+                    "internalType": "bytes",
+                    "name": "hash_",
+                    "type": "bytes"
+                  }
+                ],
+                "internalType": "struct CastId",
+                "name": "target_cast_id",
+                "type": "tuple"
+              },
+              {
+                "internalType": "string",
+                "name": "target_url",
+                "type": "string"
+              }
+            ],
+            "internalType": "struct ReactionBody",
+            "name": "reaction_body",
+            "type": "tuple"
+          },
+          {
+            "internalType": "bool",
+            "name": "empty",
+            "type": "bool"
+          },
+          {
+            "components": [
+              {
+                "internalType": "bytes",
+                "name": "address_",
+                "type": "bytes"
+              },
+              {
+                "internalType": "bytes",
+                "name": "eth_signature",
+                "type": "bytes"
+              },
+              {
+                "internalType": "bytes",
+                "name": "block_hash",
+                "type": "bytes"
+              },
+              {
+                "internalType": "uint32",
+                "name": "verification_type",
+                "type": "uint32"
+              },
+              {
+                "internalType": "uint32",
+                "name": "chain_id",
+                "type": "uint32"
+              }
+            ],
+            "internalType": "struct VerificationAddEthAddressBody",
+            "name": "verification_add_eth_address_body",
+            "type": "tuple"
+          },
+          {
+            "internalType": "bool",
+            "name": "empty_verification_remove_body",
+            "type": "bool"
+          },
+          {
+            "internalType": "bool",
+            "name": "deprecated_signer_add_body",
+            "type": "bool"
+          },
+          {
+            "internalType": "bool",
+            "name": "user_data_body",
+            "type": "bool"
+          },
+          {
+            "internalType": "bool",
+            "name": "deprecated_signer_remove_body",
+            "type": "bool"
+          },
+          {
+            "components": [
+              {
+                "internalType": "string",
+                "name": "type_",
+                "type": "string"
+              },
+              {
+                "internalType": "uint32",
+                "name": "displayTimestamp",
+                "type": "uint32"
+              },
+              {
+                "internalType": "uint64",
+                "name": "target_fid",
+                "type": "uint64"
+              }
+            ],
+            "internalType": "struct LinkBody",
+            "name": "link_body",
+            "type": "tuple"
+          },
+          {
+            "internalType": "bool",
+            "name": "empty_username_proof_body",
+            "type": "bool"
+          },
+          {
+            "components": [
+              {
+                "internalType": "bytes",
+                "name": "url",
+                "type": "bytes"
+              },
+              {
+                "internalType": "uint32",
+                "name": "button_index",
+                "type": "uint32"
+              },
+              {
+                "components": [
+                  {
+                    "internalType": "uint64",
+                    "name": "fid",
+                    "type": "uint64"
+                  },
+                  {
+                    "internalType": "bytes",
+                    "name": "hash_",
+                    "type": "bytes"
+                  }
+                ],
+                "internalType": "struct CastId",
+                "name": "cast_id",
+                "type": "tuple"
+              },
+              {
+                "internalType": "bytes",
+                "name": "input_text",
+                "type": "bytes"
+              }
+            ],
+            "internalType": "struct FrameActionBody",
+            "name": "frame_action_body",
+            "type": "tuple"
+          }
+        ],
+        "internalType": "struct MessageData",
+        "name": "",
+        "type": "tuple"
+      }
+    ],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "bytes32",
+        "name": "public_key",
+        "type": "bytes32"
+      },
+      {
+        "internalType": "bytes32",
+        "name": "signature_r",
+        "type": "bytes32"
+      },
+      {
+        "internalType": "bytes32",
+        "name": "signature_s",
+        "type": "bytes32"
+      },
+      {
+        "internalType": "bytes",
+        "name": "message",
+        "type": "bytes"
+      }
+    ],
+    "name": "verifyFrameActionBodyMessage",
+    "outputs": [
+      {
+        "components": [
+          {
+            "internalType": "enum MessageType",
+            "name": "type_",
+            "type": "uint8"
+          },
+          {
+            "internalType": "uint64",
+            "name": "fid",
+            "type": "uint64"
+          },
+          {
+            "internalType": "uint32",
+            "name": "timestamp",
+            "type": "uint32"
+          },
+          {
+            "internalType": "enum FarcasterNetwork",
+            "name": "network",
+            "type": "uint8"
+          },
+          {
+            "components": [
+              {
+                "internalType": "string",
+                "name": "embeds_deprecated",
+                "type": "string"
+              },
+              {
+                "internalType": "uint64[]",
+                "name": "mentions",
+                "type": "uint64[]"
+              },
+              {
+                "components": [
+                  {
+                    "internalType": "uint64",
+                    "name": "fid",
+                    "type": "uint64"
+                  },
+                  {
+                    "internalType": "bytes",
+                    "name": "hash_",
+                    "type": "bytes"
+                  }
+                ],
+                "internalType": "struct CastId",
+                "name": "parent_cast_id",
+                "type": "tuple"
+              },
+              {
+                "internalType": "string",
+                "name": "text",
+                "type": "string"
+              },
+              {
+                "internalType": "uint32[]",
+                "name": "mentions_positions",
+                "type": "uint32[]"
+              },
+              {
+                "components": [
+                  {
+                    "internalType": "string",
+                    "name": "url",
+                    "type": "string"
+                  },
+                  {
+                    "components": [
+                      {
+                        "internalType": "uint64",
+                        "name": "fid",
+                        "type": "uint64"
+                      },
+                      {
+                        "internalType": "bytes",
+                        "name": "hash_",
+                        "type": "bytes"
+                      }
+                    ],
+                    "internalType": "struct CastId",
+                    "name": "cast_id",
+                    "type": "tuple"
+                  }
+                ],
+                "internalType": "struct Embed[]",
+                "name": "embeds",
+                "type": "tuple[]"
+              },
+              {
+                "internalType": "string",
+                "name": "parent_url",
+                "type": "string"
+              }
+            ],
+            "internalType": "struct CastAddBody",
+            "name": "cast_add_body",
+            "type": "tuple"
+          },
+          {
+            "internalType": "bool",
+            "name": "empty_cast_remove_body",
+            "type": "bool"
+          },
+          {
+            "components": [
+              {
+                "internalType": "enum ReactionType",
+                "name": "type_",
+                "type": "uint8"
+              },
+              {
+                "components": [
+                  {
+                    "internalType": "uint64",
+                    "name": "fid",
+                    "type": "uint64"
+                  },
+                  {
+                    "internalType": "bytes",
+                    "name": "hash_",
+                    "type": "bytes"
+                  }
+                ],
+                "internalType": "struct CastId",
+                "name": "target_cast_id",
+                "type": "tuple"
+              },
+              {
+                "internalType": "string",
+                "name": "target_url",
+                "type": "string"
+              }
+            ],
+            "internalType": "struct ReactionBody",
+            "name": "reaction_body",
+            "type": "tuple"
+          },
+          {
+            "internalType": "bool",
+            "name": "empty",
+            "type": "bool"
+          },
+          {
+            "components": [
+              {
+                "internalType": "bytes",
+                "name": "address_",
+                "type": "bytes"
+              },
+              {
+                "internalType": "bytes",
+                "name": "eth_signature",
+                "type": "bytes"
+              },
+              {
+                "internalType": "bytes",
+                "name": "block_hash",
+                "type": "bytes"
+              },
+              {
+                "internalType": "uint32",
+                "name": "verification_type",
+                "type": "uint32"
+              },
+              {
+                "internalType": "uint32",
+                "name": "chain_id",
+                "type": "uint32"
+              }
+            ],
+            "internalType": "struct VerificationAddEthAddressBody",
+            "name": "verification_add_eth_address_body",
+            "type": "tuple"
+          },
+          {
+            "internalType": "bool",
+            "name": "empty_verification_remove_body",
+            "type": "bool"
+          },
+          {
+            "internalType": "bool",
+            "name": "deprecated_signer_add_body",
+            "type": "bool"
+          },
+          {
+            "internalType": "bool",
+            "name": "user_data_body",
+            "type": "bool"
+          },
+          {
+            "internalType": "bool",
+            "name": "deprecated_signer_remove_body",
+            "type": "bool"
+          },
+          {
+            "components": [
+              {
+                "internalType": "string",
+                "name": "type_",
+                "type": "string"
+              },
+              {
+                "internalType": "uint32",
+                "name": "displayTimestamp",
+                "type": "uint32"
+              },
+              {
+                "internalType": "uint64",
+                "name": "target_fid",
+                "type": "uint64"
+              }
+            ],
+            "internalType": "struct LinkBody",
+            "name": "link_body",
+            "type": "tuple"
+          },
+          {
+            "internalType": "bool",
+            "name": "empty_username_proof_body",
+            "type": "bool"
+          },
+          {
+            "components": [
+              {
+                "internalType": "bytes",
+                "name": "url",
+                "type": "bytes"
+              },
+              {
+                "internalType": "uint32",
+                "name": "button_index",
+                "type": "uint32"
+              },
+              {
+                "components": [
+                  {
+                    "internalType": "uint64",
+                    "name": "fid",
+                    "type": "uint64"
+                  },
+                  {
+                    "internalType": "bytes",
+                    "name": "hash_",
+                    "type": "bytes"
+                  }
+                ],
+                "internalType": "struct CastId",
+                "name": "cast_id",
+                "type": "tuple"
+              },
+              {
+                "internalType": "bytes",
+                "name": "input_text",
+                "type": "bytes"
+              }
+            ],
+            "internalType": "struct FrameActionBody",
+            "name": "frame_action_body",
+            "type": "tuple"
+          }
+        ],
+        "internalType": "struct MessageData",
+        "name": "",
+        "type": "tuple"
+      }
+    ],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "bytes32",
+        "name": "public_key",
+        "type": "bytes32"
+      },
+      {
+        "internalType": "bytes32",
+        "name": "signature_r",
+        "type": "bytes32"
+      },
+      {
+        "internalType": "bytes32",
+        "name": "signature_s",
+        "type": "bytes32"
+      },
+      {
+        "internalType": "bytes",
+        "name": "message",
+        "type": "bytes"
+      }
+    ],
+    "name": "verifyReactionAddMessage",
+    "outputs": [
+      {
+        "components": [
+          {
+            "internalType": "enum MessageType",
+            "name": "type_",
+            "type": "uint8"
+          },
+          {
+            "internalType": "uint64",
+            "name": "fid",
+            "type": "uint64"
+          },
+          {
+            "internalType": "uint32",
+            "name": "timestamp",
+            "type": "uint32"
+          },
+          {
+            "internalType": "enum FarcasterNetwork",
+            "name": "network",
+            "type": "uint8"
+          },
+          {
+            "components": [
+              {
+                "internalType": "string",
+                "name": "embeds_deprecated",
+                "type": "string"
+              },
+              {
+                "internalType": "uint64[]",
+                "name": "mentions",
+                "type": "uint64[]"
+              },
+              {
+                "components": [
+                  {
+                    "internalType": "uint64",
+                    "name": "fid",
+                    "type": "uint64"
+                  },
+                  {
+                    "internalType": "bytes",
+                    "name": "hash_",
+                    "type": "bytes"
+                  }
+                ],
+                "internalType": "struct CastId",
+                "name": "parent_cast_id",
+                "type": "tuple"
+              },
+              {
+                "internalType": "string",
+                "name": "text",
+                "type": "string"
+              },
+              {
+                "internalType": "uint32[]",
+                "name": "mentions_positions",
+                "type": "uint32[]"
+              },
+              {
+                "components": [
+                  {
+                    "internalType": "string",
+                    "name": "url",
+                    "type": "string"
+                  },
+                  {
+                    "components": [
+                      {
+                        "internalType": "uint64",
+                        "name": "fid",
+                        "type": "uint64"
+                      },
+                      {
+                        "internalType": "bytes",
+                        "name": "hash_",
+                        "type": "bytes"
+                      }
+                    ],
+                    "internalType": "struct CastId",
+                    "name": "cast_id",
+                    "type": "tuple"
+                  }
+                ],
+                "internalType": "struct Embed[]",
+                "name": "embeds",
+                "type": "tuple[]"
+              },
+              {
+                "internalType": "string",
+                "name": "parent_url",
+                "type": "string"
+              }
+            ],
+            "internalType": "struct CastAddBody",
+            "name": "cast_add_body",
+            "type": "tuple"
+          },
+          {
+            "internalType": "bool",
+            "name": "empty_cast_remove_body",
+            "type": "bool"
+          },
+          {
+            "components": [
+              {
+                "internalType": "enum ReactionType",
+                "name": "type_",
+                "type": "uint8"
+              },
+              {
+                "components": [
+                  {
+                    "internalType": "uint64",
+                    "name": "fid",
+                    "type": "uint64"
+                  },
+                  {
+                    "internalType": "bytes",
+                    "name": "hash_",
+                    "type": "bytes"
+                  }
+                ],
+                "internalType": "struct CastId",
+                "name": "target_cast_id",
+                "type": "tuple"
+              },
+              {
+                "internalType": "string",
+                "name": "target_url",
+                "type": "string"
+              }
+            ],
+            "internalType": "struct ReactionBody",
+            "name": "reaction_body",
+            "type": "tuple"
+          },
+          {
+            "internalType": "bool",
+            "name": "empty",
+            "type": "bool"
+          },
+          {
+            "components": [
+              {
+                "internalType": "bytes",
+                "name": "address_",
+                "type": "bytes"
+              },
+              {
+                "internalType": "bytes",
+                "name": "eth_signature",
+                "type": "bytes"
+              },
+              {
+                "internalType": "bytes",
+                "name": "block_hash",
+                "type": "bytes"
+              },
+              {
+                "internalType": "uint32",
+                "name": "verification_type",
+                "type": "uint32"
+              },
+              {
+                "internalType": "uint32",
+                "name": "chain_id",
+                "type": "uint32"
+              }
+            ],
+            "internalType": "struct VerificationAddEthAddressBody",
+            "name": "verification_add_eth_address_body",
+            "type": "tuple"
+          },
+          {
+            "internalType": "bool",
+            "name": "empty_verification_remove_body",
+            "type": "bool"
+          },
+          {
+            "internalType": "bool",
+            "name": "deprecated_signer_add_body",
+            "type": "bool"
+          },
+          {
+            "internalType": "bool",
+            "name": "user_data_body",
+            "type": "bool"
+          },
+          {
+            "internalType": "bool",
+            "name": "deprecated_signer_remove_body",
+            "type": "bool"
+          },
+          {
+            "components": [
+              {
+                "internalType": "string",
+                "name": "type_",
+                "type": "string"
+              },
+              {
+                "internalType": "uint32",
+                "name": "displayTimestamp",
+                "type": "uint32"
+              },
+              {
+                "internalType": "uint64",
+                "name": "target_fid",
+                "type": "uint64"
+              }
+            ],
+            "internalType": "struct LinkBody",
+            "name": "link_body",
+            "type": "tuple"
+          },
+          {
+            "internalType": "bool",
+            "name": "empty_username_proof_body",
+            "type": "bool"
+          },
+          {
+            "components": [
+              {
+                "internalType": "bytes",
+                "name": "url",
+                "type": "bytes"
+              },
+              {
+                "internalType": "uint32",
+                "name": "button_index",
+                "type": "uint32"
+              },
+              {
+                "components": [
+                  {
+                    "internalType": "uint64",
+                    "name": "fid",
+                    "type": "uint64"
+                  },
+                  {
+                    "internalType": "bytes",
+                    "name": "hash_",
+                    "type": "bytes"
+                  }
+                ],
+                "internalType": "struct CastId",
+                "name": "cast_id",
+                "type": "tuple"
+              },
+              {
+                "internalType": "bytes",
+                "name": "input_text",
+                "type": "bytes"
+              }
+            ],
+            "internalType": "struct FrameActionBody",
+            "name": "frame_action_body",
+            "type": "tuple"
+          }
+        ],
+        "internalType": "struct MessageData",
+        "name": "",
+        "type": "tuple"
+      }
+    ],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  }
+]

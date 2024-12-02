@@ -1,0 +1,59 @@
+[
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "verifier",
+        "type": "address"
+      }
+    ],
+    "name": "getFid",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "fid",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "verifier",
+        "type": "address"
+      }
+    ],
+    "name": "getFidWithEvent",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "fid",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address[]",
+        "name": "verifiers",
+        "type": "address[]"
+      }
+    ],
+    "name": "getFids",
+    "outputs": [
+      {
+        "internalType": "uint256[]",
+        "name": "fid",
+        "type": "uint256[]"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  }
+]
