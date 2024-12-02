@@ -3,16 +3,21 @@ pragma solidity ^0.8.9;
 
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "hardhat/console.sol";
 // import "./libraries/Blake3.sol";
 // import "./libraries/Ed25519.sol";
 // import "./protobufs/message.proto.sol";
 
+//通过地址获取 fid
 interface IVerificationsV4Reader {
-    function getFid(address verifier) external view returns (uint256 fid);
     function getFidWithEvent(address verifier) external returns (uint256 fid);
-    function getFids(address[] calldata verifiers) external view returns (uint256[] memory fid);
 }
 
+//通过地址获取分数
+interface INeynarUserScoresReader {
+    function getScoreWithEvent(address verifier) external returns (uint24 score);
+
+}
 
 import { MessageData,MessageType,ReactionType } from './protobufs/message.proto.sol';
 
@@ -38,7 +43,11 @@ contract TaskReward is  ReentrancyGuard {
     enum TaskStatus { ACTIVE, COMPLETED, EXPIRED }
 
     IFarcasterVerify public farcasterVerify;
-    // IVerificationsV4Reader public getscore;
+    IVerificationsV4Reader public getuserfid = IVerificationsV4Reader(0xdB1eCF22d195dF9e03688C33707b19C68BdEd142);
+    INeynarUserScoresReader public getuserscore = INeynarUserScoresReader(0xd3C43A38D1D3E47E9c420a733e439B03FAAdebA8);
+
+    //farcaster basetime https://docs.farcaster.xyz/learn/what-is-farcaster/messages#timestamps
+    uint32 constant BASETIME = 1609459200;
 
     struct Task {
         address creator;
@@ -46,14 +55,15 @@ contract TaskReward is  ReentrancyGuard {
         uint256 reward;  //总奖励金额
         uint256 perUserAmount;    // 每人奖励金额
         address rewardToken;  //not eth   
-        uint256 endtime; //任务结束时间.只有结束后才可以领取奖励
-        uint256 expiredtime;  // 任务过期时间,过期后没有领取的可以退钱.
+        uint32 starttime;//任务结束时间
+        uint32 endtime; //任务结束时间.只有结束后才可以领取奖励
+        uint32 expiredtime;  // 任务过期时间,过期后没有领取的可以退钱.
         uint256 maxParticipants;
         uint256 completedCount;
         TaskStatus status;
         
         // Task specific parameters
-        bytes32 targetHash;      // For RECAST, REPLY, and LIKE
+        bytes20 targetHash;      // For RECAST, REPLY, and LIKE
         string[] requiredWords;  // For REPLY and NEW_CAST
         uint256 minLength;       // For REPLY and NEW_CAST
         uint256 score;  //用户的分数.  0-1000000 https://docs.neynar.com/docs/address-user-score-contract
@@ -81,7 +91,7 @@ contract TaskReward is  ReentrancyGuard {
         uint256 endtime,  
         uint256 maxParticipants,
         TaskStatus status,
-        bytes32 targetHash,
+        bytes20 targetHash,
         string[] requiredWords,
         uint256 minLength,
         uint256 score
@@ -107,20 +117,28 @@ contract TaskReward is  ReentrancyGuard {
 
     // Errors
     error TaskNotFound();
-    error TaskNotEnded();
-    error TaskAlreadyCompleted();
+    error TaskNotExpired();
+    error TaskIsFullStaffed();
     error UserAlreadyClaimed();
     error InvalidProof();
     error InvalidReward();
     error InvalidEndtime();
+    error WaitForEnd();
+    error TaskIsExpired();
     error InvalidParticipants();
+    error InvaildTaskStatus();
     error InsufficientReward();
     error InvalidTokenAddress();
     error InvalidScore();
+    error InvaildTaskRequirements();
     error TargetHashMismatch();
     error RequiredWordsMismatch();
     error MinLengthMismatch();
     error InvalidTaskType();
+    error NotEnoughScore();
+    error NotFoundFID();
+    error AddressDontMatchFid();
+    error InvaildMessageTime(); //错误的帖子时间.
 
     constructor(address _farcasterVerifyAddress) {
         // getscore = IVerificationsV4Reader(_verificationsAddress);
@@ -131,9 +149,10 @@ contract TaskReward is  ReentrancyGuard {
         TaskType taskType,
         uint256 reward,
         address rewardToken,
-        uint256 endtime,
+        uint32 starttime,
+        uint32 endtime,
         uint256 maxParticipants,
-        bytes32 targetHash,
+        bytes20 targetHash,
         string[] memory requiredWords,
         uint256 minLength,
         uint256 score
@@ -142,7 +161,9 @@ contract TaskReward is  ReentrancyGuard {
         if (maxParticipants == 0) revert InvalidParticipants();
         if (rewardToken == address(0)) revert InvalidTokenAddress();
         if (reward == 0) revert InvalidReward();
-        if (score < 0 || score > 1000000) revert InvalidScore();
+        if (score > 1000000) revert InvalidScore();
+        if (taskType == TaskType.NEW_CAST && targetHash != bytes20(0)) revert InvaildTaskRequirements();
+        if (taskType != TaskType.NEW_CAST && targetHash == bytes20(0)) revert InvaildTaskRequirements();
 
         uint256 perUserAmount = reward / maxParticipants;
 
@@ -156,6 +177,7 @@ contract TaskReward is  ReentrancyGuard {
             reward: reward,
             perUserAmount: perUserAmount,
             rewardToken: rewardToken,
+            starttime:starttime,
             endtime: endtime,
             expiredtime: endtime+30*60*60*24,
             maxParticipants: maxParticipants,
@@ -178,12 +200,21 @@ contract TaskReward is  ReentrancyGuard {
     ) external nonReentrant {
         Task storage task = tasks[taskId];
         if (task.creator == address(0)) revert TaskNotFound();
-        if (block.timestamp < task.endtime) revert TaskNotEnded();
-        if (task.status != TaskStatus.ACTIVE) revert TaskAlreadyCompleted();
+        if (block.timestamp < task.endtime) revert WaitForEnd();
+        if (block.timestamp > task.expiredtime) revert TaskIsExpired();
         if (userClaimedTasks[taskId][user]) revert UserAlreadyClaimed();
-        if (task.completedCount >= task.maxParticipants) revert TaskAlreadyCompleted();
+        if (task.completedCount >= task.maxParticipants) revert TaskIsFullStaffed();
+        if (task.status != TaskStatus.ACTIVE) revert InvaildTaskStatus();
 
-        _verifyProof(task, proof);
+        if (task.score> 0){
+            uint256 userScore = getuserscore.getScoreWithEvent(user);
+            console.log("userScore:",userScore);
+            if (userScore < task.score) revert NotEnoughScore();
+        }
+        uint256 userFid = getuserfid.getFidWithEvent(user);
+        if (userFid == 0) revert NotFoundFID();
+
+        _verifyProof(task, proof,userFid);
         
 
         // Mark task as completed for this user
@@ -201,7 +232,7 @@ contract TaskReward is  ReentrancyGuard {
         emit RewardPaid(taskId, user, task.perUserAmount, task.rewardToken);
     }
 
-    function _verifyProof(Task storage task, TaskProof calldata proof) internal  returns (bool) {
+    function _verifyProof(Task memory task, TaskProof calldata proof,uint256 userFid) internal returns (bool) {
 
         MessageData memory message_data;
         if (task.taskType == TaskType.RECAST || task.taskType == TaskType.LIKE) {
@@ -209,6 +240,18 @@ contract TaskReward is  ReentrancyGuard {
         } else{
             message_data =  farcasterVerify.verifyCastAddMessage(proof.public_key, proof.signature_r, proof.signature_s, proof.message);
         }
+
+        //检查用户和 fid 地址是否一致
+        uint256 proofFid =uint256(message_data.fid);
+        console.log("proofFid:",proofFid);
+        console.log("userFid:",userFid);
+        if (proofFid != userFid) revert AddressDontMatchFid();
+        
+        //帖子的发布时间
+        uint32 messageTime = message_data.timestamp	+BASETIME;
+        if (messageTime < task.starttime || messageTime > task.endtime) revert InvaildMessageTime();
+
+
 
         if (task.taskType == TaskType.RECAST) {
             if (!_verifyRecast(message_data, task)) revert InvalidProof();
@@ -229,9 +272,13 @@ contract TaskReward is  ReentrancyGuard {
         if (message_data.reaction_body.type_ != ReactionType.REACTION_TYPE_RECAST) revert InvalidTaskType();
 
         // 验证目标帖子 
-        bytes32 recastTargetHash = keccak256(abi.encodePacked(message_data.reaction_body.target_cast_id.hash_));
+        bytes memory hash = message_data.reaction_body.target_cast_id.hash_;
+        require(hash.length == 20, "Invalid hash length");
+        bytes20 recastTargetHash;
+        assembly {
+            recastTargetHash := mload(add(hash, 32))
+        }
         if (recastTargetHash != task.targetHash) revert TargetHashMismatch();
-
         return true;
     }
     
@@ -241,18 +288,36 @@ contract TaskReward is  ReentrancyGuard {
         if (message_data.reaction_body.type_ != ReactionType.REACTION_TYPE_LIKE) revert InvalidTaskType();
 
         // 验证目标帖子
-        bytes32 targetMessageHash = keccak256(abi.encodePacked(message_data.reaction_body.target_cast_id.hash_));
-        if (targetMessageHash != task.targetHash) revert TargetHashMismatch();
+        bytes memory hash = message_data.reaction_body.target_cast_id.hash_;
+        require(hash.length == 20, "Invalid hash length");
+        bytes20 castTargetHash;
+        assembly {
+            castTargetHash := mload(add(hash, 32))
+        }
+        if (castTargetHash != task.targetHash) revert TargetHashMismatch();
 
         return true;
     }
 
+    function _gethash(MessageData memory message_data) internal pure returns (bytes20 replyTargetHash) {
+        bytes memory hash;
+        if (bytes(message_data.cast_add_body.parent_url).length == 0) {
+            hash = message_data.cast_add_body.parent_cast_id.hash_;
+        }else{
+            //in channel
+            hash = message_data.cast_add_body.embeds[0].cast_id.hash_;
+        }
+        require(hash.length == 20, "Invalid hash length");
+        assembly {
+            replyTargetHash := mload(add(hash, 32))
+        }
+        return replyTargetHash;
+    }
     function _verifyReply(MessageData memory message_data, Task memory task) internal pure returns (bool) {
         // 验证消息类型是否为回复
         if (message_data.type_ != MessageType.MESSAGE_TYPE_CAST_ADD) revert InvalidTaskType();
         
-        // 验证是否是回复目标帖子
-        bytes32 replyTargetHash = keccak256(abi.encodePacked(message_data.cast_add_body.parent_cast_id.hash_));
+        bytes20 replyTargetHash = _gethash(message_data);
         if (replyTargetHash != task.targetHash) revert TargetHashMismatch();
 
         // 验证文本长度
@@ -273,8 +338,8 @@ contract TaskReward is  ReentrancyGuard {
         if (message_data.type_ != MessageType.MESSAGE_TYPE_CAST_ADD) revert InvalidTaskType();
         
         // 验证是否是新帖子（不是回复）
-        bytes32 newCastParentHash = keccak256(abi.encodePacked(message_data.cast_add_body.parent_cast_id.hash_));
-        if (newCastParentHash != bytes32(0)) revert InvalidTaskType(); 
+        bytes memory hash = message_data.cast_add_body.parent_cast_id.hash_;
+        if (hash.length != 0) revert InvalidTaskType();
 
         // 验证文本长度
         if (bytes(message_data.cast_add_body.text).length < task.minLength) revert MinLengthMismatch();
@@ -313,8 +378,8 @@ contract TaskReward is  ReentrancyGuard {
     function withdrawUnusedRewards(uint256 taskId) external  {
         Task storage task = tasks[taskId];
         if (task.creator == address(0)) revert TaskNotFound();
-        if (block.timestamp < task.endtime) revert TaskNotEnded();
-        if(task.status != TaskStatus.ACTIVE) revert TaskAlreadyCompleted();
+        if (block.timestamp < task.expiredtime) revert TaskNotExpired();
+        if(task.status != TaskStatus.ACTIVE) revert InvaildTaskStatus();
 
         if(task.completedCount >= task.maxParticipants)revert InsufficientReward();
         uint256 unusedRewards = task.perUserAmount * (task.maxParticipants - task.completedCount);
