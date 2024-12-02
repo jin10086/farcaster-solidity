@@ -63,7 +63,7 @@ describe('TaskReward Contract', async () => {
 
     describe('Task Creation', () => {
         it('Should create a RECAST task successfully', async () => {
-            const endTime = Math.floor(Date.now() / 1000) + oneDay;
+            const endTime = await helperstime.latest() + oneDay;
             const tx = await taskReward.createTask(
                 0, // TaskType.RECAST
                 oneETH,
@@ -95,7 +95,7 @@ describe('TaskReward Contract', async () => {
         });
 
         it('Should create a RECAST task with targetHash successfully', async () => {
-            const endTime = Math.floor(Date.now() / 1000) + oneDay;
+            const endTime = await helperstime.latest() + oneDay;
             const targetHash = "0x9f22514691c2375e25ae09263512ec7ec2c8e5de";
             const tx = await taskReward.createTask(
                 0, // TaskType.RECAST
@@ -165,7 +165,7 @@ describe('TaskReward Contract', async () => {
         });
 
         it('should revert with wait for endtime', async () => {
-            const endTime = Math.floor(Date.now() / 1000) + oneDay;
+            const endTime = await helperstime.latest() + oneDay;
             await expect(taskReward.createTask(
                 0, // TaskType.RECAST
                 oneETH,
@@ -205,7 +205,7 @@ describe('TaskReward Contract', async () => {
             //Uint8Array to bytes20
             let tragetHash = ethers.hexlify(tragetHash_);
             console.log("task0 targetHash:::", tragetHash);
-            const endTime = Math.floor(Date.now() / 1000) + oneDay;
+            const endTime = await helperstime.latest() + oneDay;
             await taskReward.createTask(
                 0, // TaskType.RECAST
                 oneETH,
@@ -299,7 +299,7 @@ describe('TaskReward Contract', async () => {
             //Uint8Array to bytes20
             let tragetHash = ethers.hexlify(tragetHash_);
             console.log("task0 targetHash:::", tragetHash);
-            const endTime = Math.floor(Date.now() / 1000) + oneDay*2;
+            const endTime = await helperstime.latest() + oneDay;
             await taskReward.createTask(
                 0, // TaskType.RECAST
                 oneETH,
