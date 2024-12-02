@@ -285,6 +285,51 @@ describe('TaskReward Contract', async () => {
                 )).to.be.revertedWithCustomError(taskReward, 'TaskIsFullStaffed');
         });
 
+        it('should revert with recast InvalidTaskType', async () => {
+
+            let taskId = await taskReward.taskIdCounter()
+            let tragetHash_ = recastProof.rawmessage.reactionBody?.targetCastId?.hash;
+            let maxParticipants_ = 10
+            // Ensure tragetHash_ is defined and convert properly
+            if (!tragetHash_) {
+                throw new Error('Target hash is undefined');
+            }
+            //Uint8Array to bytes20
+            let tragetHash = ethers.hexlify(tragetHash_);
+            console.log("task0 targetHash:::", tragetHash);
+            const endTime = Math.floor(Date.now() / 1000) + oneDay*2;
+            await taskReward.createTask(
+                0, // TaskType.RECAST
+                oneETH,
+                mockToken.target,
+                endTime,
+                maxParticipants_,
+                tragetHash,
+                [],
+                0,
+                500000
+            );
+
+            // Fast forward time to after endTime
+            await ethers.provider.send("evm_increaseTime", [endTime + 1]);
+            await ethers.provider.send("evm_mine", []);
+
+
+            //use likecast to verify recast
+            let likecastproof = getproof(likecast);
+            await expect(taskReward.submitProof(
+                taskId, // taskId
+                user1.address,
+                {
+                    public_key: likecastproof.public_key,
+                    signature_r: likecastproof.signature_r,
+                    signature_s: likecastproof.signature_s,
+                    message: likecastproof.message
+                }
+            )).to.be.revertedWithCustomError(taskReward, 'InvalidTaskType');
+
+        })
+
 
 
     });
