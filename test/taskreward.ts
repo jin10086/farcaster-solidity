@@ -154,6 +154,7 @@ describe('TaskReward Contract', async () => {
             if (!tragetHash_) {
                 throw new Error('Target hash is undefined');
             }
+            //Uint8Array to bytes20
             let tragetHash = ethers.hexlify(tragetHash_);
             console.log("task0 targetHash:::",tragetHash);
             const endTime = Math.floor(Date.now() / 1000) + oneDay;
@@ -169,12 +170,14 @@ describe('TaskReward Contract', async () => {
                 500000
             );
 
+            let taskIdCounter = await taskReward.taskIdCounter()
+
             // Fast forward time to after endTime
             await ethers.provider.send("evm_increaseTime", [oneDay + 1]);
             await ethers.provider.send("evm_mine", []);
 
             const tx = await taskReward.submitProof(
-                0, // taskId
+                taskIdCounter -  BigInt(1), // taskId
                 user1.address,
                 {
                     public_key: recastProof.public_key,
