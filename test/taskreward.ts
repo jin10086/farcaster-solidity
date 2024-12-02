@@ -552,8 +552,8 @@ describe('TaskReward Contract', async () => {
             let maxParticipants_ = 10
             
             const endTime = await helperstime.latest() + oneDay;
-            const requiredWords = ["hello", "world"];
-            const minLength = 10;
+            const requiredWords = ["How", "meme"];
+            const minLength = 3;
 
             await taskReward.createTask(
                 2, // TaskType.NEW_CAST
@@ -567,7 +567,7 @@ describe('TaskReward Contract', async () => {
                 500000
             );
 
-            await helperstime.increase(oneDay + 1);
+            await helperstime.increase(endTime + 1);
 
             const tx = await taskReward.submitProof(
                 taskId,
@@ -603,7 +603,7 @@ describe('TaskReward Contract', async () => {
                 500000
             );
 
-            await helperstime.increase(oneDay + 1);
+            await helperstime.increase(endTime + 1);
 
             await expect(
                 taskReward.submitProof(
@@ -637,7 +637,7 @@ describe('TaskReward Contract', async () => {
                 500000
             );
 
-            await helperstime.increase(oneDay + 1);
+            await helperstime.increase(endTime + 1);
 
             await expect(
                 taskReward.submitProof(
