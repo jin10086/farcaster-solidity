@@ -200,14 +200,15 @@ contract TaskReward is  ReentrancyGuard {
         if (task.completedCount >= task.maxParticipants) revert TaskIsFullStaffed();
         if (task.status != TaskStatus.ACTIVE) revert InvaildTaskStatus();
 
-        if (task.score> 0){
-            uint256 userScore = getuserscore.getScoreWithEvent(user);
-            if (userScore < task.score) revert NotEnoughScore();
-        }
-        uint256 userFid = getuserfid.getFidWithEvent(user);
-        if (userFid == 0) revert NotFoundFID();
+        // if (task.score> 0){
+        //     uint256 userScore = getuserscore.getScoreWithEvent(user);
+        //     if (userScore < task.score) revert NotEnoughScore();
+        // }
+        // uint256 userFid = getuserfid.getFidWithEvent(user);
+        // if (userFid == 0) revert NotFoundFID();
+        
 
-        _verifyProof(task, proof,userFid);
+        _verifyProof(task, proof);
         
 
         // Mark task as completed for this user
@@ -225,7 +226,7 @@ contract TaskReward is  ReentrancyGuard {
         emit RewardPaid(taskId, user, task.perUserAmount, task.rewardToken);
     }
 
-    function _verifyProof(Task memory task, TaskProof calldata proof,uint256 userFid) internal returns (bool) {
+    function _verifyProof(Task memory task, TaskProof calldata proof) internal returns (bool) {
 
         MessageData memory message_data;
         if (task.taskType == TaskType.RECAST || task.taskType == TaskType.LIKE) {
@@ -234,13 +235,13 @@ contract TaskReward is  ReentrancyGuard {
             message_data =  farcasterVerify.verifyCastAddMessage(proof.public_key, proof.signature_r, proof.signature_s, proof.message);
         }
 
-        //检查用户和 fid 地址是否一致
-        uint256 proofFid =uint256(message_data.fid);
-        if (proofFid != userFid) revert AddressDontMatchFid();
+        // //检查用户和 fid 地址是否一致
+        // uint256 proofFid =uint256(message_data.fid);
+        // if (proofFid != userFid) revert AddressDontMatchFid();
         
-        //帖子的发布时间
-        uint32 messageTime = message_data.timestamp;
-        if (messageTime < task.starttime || messageTime > task.endtime) revert InvaildMessageTime();
+        // //帖子的发布时间
+        // uint32 messageTime = message_data.timestamp;
+        // if (messageTime < task.starttime || messageTime > task.endtime) revert InvaildMessageTime();
 
 
 
