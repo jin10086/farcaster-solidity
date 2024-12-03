@@ -52,8 +52,9 @@ contract TaskReward is  ReentrancyGuard {
         uint256 reward;  //总奖励金额
         uint256 perUserAmount;    // 每人奖励金额
         address rewardToken;  //not eth   
-        uint256 endtime; //任务结束时间.只有结束后才可以领取奖励
-        uint256 expiredtime;  // 任务过期时间,过期后没有领取的可以退钱.
+        uint32 starttime;//任务结束时间
+        uint32 endtime; //任务结束时间.只有结束后才可以领取奖励
+        uint32 expiredtime;  // 任务过期时间,过期后没有领取的可以退钱.
         uint256 maxParticipants;
         uint256 completedCount;
         TaskStatus status;
@@ -133,6 +134,7 @@ contract TaskReward is  ReentrancyGuard {
     error NotEnoughScore();
     error NotFoundFID();
     error AddressDontMatchFid();
+    error InvaildMessageTime(); //错误的帖子时间.
 
     constructor(address _farcasterVerifyAddress) {
         // getscore = IVerificationsV4Reader(_verificationsAddress);
@@ -143,7 +145,8 @@ contract TaskReward is  ReentrancyGuard {
         TaskType taskType,
         uint256 reward,
         address rewardToken,
-        uint256 endtime,
+        uint32 starttime,
+        uint32 endtime,
         uint256 maxParticipants,
         bytes20 targetHash,
         string[] memory requiredWords,
@@ -168,6 +171,7 @@ contract TaskReward is  ReentrancyGuard {
             reward: reward,
             perUserAmount: perUserAmount,
             rewardToken: rewardToken,
+            starttime:starttime,
             endtime: endtime,
             expiredtime: endtime+30*60*60*24,
             maxParticipants: maxParticipants,
@@ -233,7 +237,11 @@ contract TaskReward is  ReentrancyGuard {
         //检查用户和 fid 地址是否一致
         uint256 proofFid =uint256(message_data.fid);
         if (proofFid != userFid) revert AddressDontMatchFid();
-        //TODO: 验证 开始时间以及结束时间.
+        
+        //帖子的发布时间
+        uint32 messageTime = message_data.timestamp;
+        if (messageTime < task.starttime || messageTime > task.endtime) revert InvaildMessageTime();
+
 
 
         if (task.taskType == TaskType.RECAST) {
