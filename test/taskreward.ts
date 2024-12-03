@@ -196,15 +196,15 @@ describe('TaskReward Contract', async () => {
         it('Should verify and reward RECAST proof', async () => {
 
             let taskId = await taskReward.taskIdCounter()
-            let tragetHash_ = recastProof.rawmessage.reactionBody?.targetCastId?.hash;
+            let targetHash_ = recastProof.rawmessage.reactionBody?.targetCastId?.hash;
             let maxParticipants_ = 10
-            // Ensure tragetHash_ is defined and convert properly
-            if (!tragetHash_) {
+            // Ensure targetHash_ is defined and convert properly
+            if (!targetHash_) {
                 throw new Error('Target hash is undefined');
             }
             //Uint8Array to bytes20
-            let tragetHash = ethers.hexlify(tragetHash_);
-            console.log("task0 targetHash:::", tragetHash);
+            let targetHash = ethers.hexlify(targetHash_);
+            console.log("task0 targetHash:::", targetHash);
             const endTime = await helperstime.latest() + oneDay;
             await taskReward.createTask(
                 0, // TaskType.RECAST
@@ -212,7 +212,7 @@ describe('TaskReward Contract', async () => {
                 mockToken.target,
                 endTime,
                 maxParticipants_,
-                tragetHash,
+                targetHash,
                 [],
                 0,
                 500000
@@ -288,12 +288,12 @@ describe('TaskReward Contract', async () => {
 
         it('should revert with InvalidTaskType when using wrong reaction type', async () => {
             let taskId = await taskReward.taskIdCounter()
-            let tragetHash_ = recastProof.rawmessage.reactionBody?.targetCastId?.hash;
+            let targetHash_ = recastProof.rawmessage.reactionBody?.targetCastId?.hash;
             let maxParticipants_ = 10
-            if (!tragetHash_) {
+            if (!targetHash_) {
                 throw new Error('Target hash is undefined');
             }
-            let tragetHash = ethers.hexlify(tragetHash_);
+            let targetHash = ethers.hexlify(targetHash_);
             
             const endTime = await helperstime.latest() + oneDay;
             await taskReward.createTask(
@@ -302,7 +302,7 @@ describe('TaskReward Contract', async () => {
                 mockToken.target,
                 endTime,
                 maxParticipants_,
-                tragetHash,
+                targetHash,
                 [],
                 0,
                 500000
@@ -334,7 +334,7 @@ describe('TaskReward Contract', async () => {
 
         it('should revert with InvalidMessageType when using wrong message type', async () => {
             let taskId = await taskReward.taskIdCounter()
-            let tragetHash_ = recastProof.rawmessage.reactionBody?.targetCastId?.hash;
+            let targetHash_ = recastProof.rawmessage.reactionBody?.targetCastId?.hash;
             let maxParticipants_ = 10
             
             const endTime = await helperstime.latest() + oneDay;
@@ -378,12 +378,12 @@ describe('TaskReward Contract', async () => {
 
             let taskId = await taskReward.taskIdCounter()
             let maxParticipants_ = 10
-            // Ensure tragetHash_ is defined and convert properly
+            // Ensure targetHash_ is defined and convert properly
 
             
             //Uint8Array to bytes20
-            let tragetHash = zerotargetHash;
-            console.log("task0 targetHash:::", tragetHash);
+            let targetHash = zerotargetHash;
+            console.log("task0 targetHash:::", targetHash);
             //lasttime	+   oneday
             const endTime = await helperstime.latest() + oneDay;
             await taskReward.createTask(
@@ -392,7 +392,7 @@ describe('TaskReward Contract', async () => {
                 mockToken.target,
                 endTime,
                 maxParticipants_,
-                tragetHash,
+                targetHash,
                 [],
                 0,
                 500000
