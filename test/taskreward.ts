@@ -147,8 +147,7 @@ describe('TaskReward Contract', async () => {
 
     describe('RECAST Proof Submission', () => {
         let recastProof = getproof(recast);
-     
-
+    
         it('should revert with TaskNotFound', async () => {
             const nonExistentTaskId = 999999;
             await expect(
@@ -287,14 +286,14 @@ describe('TaskReward Contract', async () => {
         });
 
         it('should revert with InvalidTaskType when using wrong reaction type', async () => {
+            let likeProof = getproof(likecast);
             let taskId = await taskReward.taskIdCounter()
-            let targetHash_ = recastProof.rawmessage.reactionBody?.targetCastId?.hash;
+            let targetHash_ = likeProof.rawmessage.reactionBody?.targetCastId?.hash;
             let maxParticipants_ = 10
             if (!targetHash_) {
                 throw new Error('Target hash is undefined');
             }
-            let targetHash = ethers.hexlify(targetHash_);
-            
+            let targetHash = ethers.hexlify(targetHash_);            
             const endTime = await helperstime.latest() + oneDay;
             await taskReward.createTask(
                 0, // TaskType.RECAST
@@ -310,31 +309,23 @@ describe('TaskReward Contract', async () => {
 
             await helperstime.increase(endTime + 1);
 
-            // Use likecast to verify recast - should fail because the reaction type is LIKE not RECAST
-            let likeProof = getproof(likecast);
-            try{
-                await taskReward.submitProof(
-                    taskId,
-                    user1.address,
-                    {
-                        public_key: likeProof.public_key,
-                        signature_r: likeProof.signature_r,
-                        signature_s: likeProof.signature_s,
-                        message: likeProof.message
-                    }
-                )
-                expect.fail('Transaction should have reverted');
-            }catch (error: any) {
-                console.log('Actual error:', error.message);
-                expect(error.message).to.include('InvalidMessageType');
-
-            }
-            
+            // Use likeProof for recast task - this will pass signature verification but fail on reaction type
+            await expect(taskReward.submitProof(
+                taskId,
+                user1.address,
+                {
+                    public_key: likeProof.public_key,
+                    signature_r: likeProof.signature_r,
+                    signature_s: likeProof.signature_s,
+                    message: likeProof.message
+                }
+            )).to.be.revertedWithCustomError(taskReward, 'InvalidTaskType');
         });
 
         it('should revert with InvalidMessageType when using wrong message type', async () => {
+            let newcastProof = getproof(newcast);
             let taskId = await taskReward.taskIdCounter()
-            let targetHash_ = recastProof.rawmessage.reactionBody?.targetCastId?.hash;
+            let targetHash_ = newcastProof.rawmessage.castAddBody?.parentCastId?.hash;
             let maxParticipants_ = 10
             
             const endTime = await helperstime.latest() + oneDay;
@@ -352,26 +343,17 @@ describe('TaskReward Contract', async () => {
 
             await helperstime.increase(endTime + 1);
 
-            // Use newcast to verify recast - should fail because message type is CAST_ADD not REACTION_ADD
-            let newcastProof = getproof(newcast);
-            try {
-                await taskReward.submitProof(
-                    taskId,
-                    user1.address,
-                    {
-                        public_key: newcastProof.public_key,
-                        signature_r: newcastProof.signature_r,
-                        signature_s: newcastProof.signature_s,
-                        message: newcastProof.message
-                    }
-                );
-                // If we reach here, the transaction didn't revert as expected
-                expect.fail('Transaction should have reverted');
-            } catch (error: any) {
-                // console.log('Actual error:', error.message);
-                // Still check for the expected error
-                expect(error.message).to.include('InvalidMessageType');
-            }
+            // Use newcast for recast task - this will fail on message type check
+            await expect(taskReward.submitProof(
+                taskId,
+                user1.address,
+                {
+                    public_key: newcastProof.public_key,
+                    signature_r: newcastProof.signature_r,
+                    signature_s: newcastProof.signature_s,
+                    message: newcastProof.message
+                }
+            )).to.be.revertedWithCustomError(farcasterVerify, 'InvalidMessageType');
         });
 
         it('should revert with recast TargetHashMismatch', async () => {
@@ -419,7 +401,6 @@ describe('TaskReward Contract', async () => {
 
     describe('LIKE Proof Submission', () => {
         let likeProof = getproof(likecast);
-
         it('Should verify and reward LIKE proof', async () => {
             let taskId = await taskReward.taskIdCounter()
             let targetHash_ = likeProof.rawmessage.reactionBody?.targetCastId?.hash;
