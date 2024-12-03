@@ -20,6 +20,8 @@ describe('TaskReward Contract', async () => {
     const oneDay = 24 * 60 * 60;
     const oneETH = ethers.parseEther("1.0");
     const score = 500000;
+    const starttime =  (new Date().getTime()/1000).toFixed(0);
+    console.log("starttime:::", starttime);
 
     before(async () => {
         [owner, user1, user2] = await ethers.getSigners();
@@ -69,6 +71,7 @@ describe('TaskReward Contract', async () => {
                 0, // TaskType.RECAST
                 oneETH,
                 mockToken.target,
+                starttime,
                 endTime,
                 10, // maxParticipants
                 zerotargetHash,
@@ -102,6 +105,7 @@ describe('TaskReward Contract', async () => {
                 0, // TaskType.RECAST
                 oneETH,
                 mockToken.target,
+                starttime,
                 endTime,
                 10, // maxParticipants
                 targetHash,
@@ -135,6 +139,7 @@ describe('TaskReward Contract', async () => {
                     0,
                     oneETH,
                     mockToken.target,
+                    starttime,
                     endTime,
                     10,
                     zerotargetHash,
@@ -170,6 +175,7 @@ describe('TaskReward Contract', async () => {
                 0, // TaskType.RECAST
                 oneETH,
                 mockToken.target,
+                starttime,
                 endTime,
                 10, // maxParticipants
                 zerotargetHash,
@@ -200,6 +206,7 @@ describe('TaskReward Contract', async () => {
                 0, // TaskType.RECAST
                 oneETH,
                 mockToken.target,
+                starttime,
                 endTime,
                 10, // maxParticipants
                 zerotargetHash,
@@ -210,7 +217,7 @@ describe('TaskReward Contract', async () => {
             
             // Fast forward time to after expiredTime
             let taskinfo = await taskReward.getTask(taskId)
-            let expiredTime = taskinfo[6]
+            let expiredTime = taskinfo[7]
             await helperstime.increaseTo(expiredTime+BigInt(1));
 
             await expect(
@@ -243,6 +250,7 @@ describe('TaskReward Contract', async () => {
                 0, // TaskType.RECAST
                 oneETH,
                 mockToken.target,
+                starttime,
                 endTime,
                 maxParticipants_,
                 targetHash,
@@ -333,6 +341,7 @@ describe('TaskReward Contract', async () => {
                 0, // TaskType.RECAST
                 oneETH,
                 mockToken.target,
+                starttime,
                 endTime,
                 maxParticipants_,
                 targetHash,
@@ -367,6 +376,7 @@ describe('TaskReward Contract', async () => {
                 0, // TaskType.RECAST
                 oneETH,
                 mockToken.target,
+                starttime,
                 endTime,
                 maxParticipants_,
                 zerotargetHash,
@@ -406,6 +416,7 @@ describe('TaskReward Contract', async () => {
                 0, // TaskType.RECAST
                 oneETH,
                 mockToken.target,
+                starttime,
                 endTime,
                 maxParticipants_,
                 targetHash,
@@ -444,6 +455,7 @@ describe('TaskReward Contract', async () => {
                 0, // TaskType.RECAST
                 oneETH,
                 mockToken.target,
+                starttime,
                 endTime,
                 maxParticipants_,
                 targetHash,
@@ -484,6 +496,7 @@ describe('TaskReward Contract', async () => {
                 3, // TaskType.LIKE
                 oneETH,
                 mockToken.target,
+                starttime,
                 endTime,
                 maxParticipants_,
                 targetHash,
@@ -531,6 +544,7 @@ describe('TaskReward Contract', async () => {
                 1, // TaskType.REPLY
                 oneETH,
                 mockToken.target,
+                starttime,
                 endTime,
                 maxParticipants_,
                 targetHash,
@@ -572,6 +586,7 @@ describe('TaskReward Contract', async () => {
                 1, // TaskType.REPLY
                 oneETH,
                 mockToken.target,
+                starttime,
                 endTime,
                 10,
                 targetHash,
@@ -611,6 +626,7 @@ describe('TaskReward Contract', async () => {
                 1, // TaskType.REPLY
                 oneETH,
                 mockToken.target,
+                starttime,
                 endTime,
                 10,
                 targetHash,
@@ -651,6 +667,7 @@ describe('TaskReward Contract', async () => {
                 2, // TaskType.NEW_CAST
                 oneETH,
                 mockToken.target,
+                starttime,
                 endTime,
                 maxParticipants_,
                 zerotargetHash,
@@ -687,6 +704,7 @@ describe('TaskReward Contract', async () => {
                 2, // TaskType.NEW_CAST
                 oneETH,
                 mockToken.target,
+                starttime,
                 endTime,
                 10,
                 zerotargetHash,
@@ -721,6 +739,7 @@ describe('TaskReward Contract', async () => {
                 2, // TaskType.NEW_CAST
                 oneETH,
                 mockToken.target,
+                starttime,
                 endTime,
                 10,
                 zerotargetHash,
@@ -769,6 +788,7 @@ describe('TaskReward Contract', async () => {
                 0, // TaskType.RECAST
                 oneETH,
                 mockToken.target,
+                starttime,
                 endTime,
                 maxParticipants_,
                 ethers.hexlify(targetHash_),
@@ -778,7 +798,7 @@ describe('TaskReward Contract', async () => {
             );
             let taskinfo = await taskReward.getTask(taskId)
             console.log(taskinfo)
-            let expiredTime = taskinfo[6]
+            let expiredTime = taskinfo[7]
 
             await helperstime.increaseTo(expiredTime - BigInt(100)); // 小于过期时间
             await expect(
@@ -800,6 +820,7 @@ describe('TaskReward Contract', async () => {
                 0, // TaskType.RECAST
                 oneETH,
                 mockToken.target,
+                starttime,
                 endTime,
                 maxParticipants_,
                 ethers.hexlify(targetHash_),
@@ -823,7 +844,7 @@ describe('TaskReward Contract', async () => {
 
             // 等待过期时间
             let taskinfo = await taskReward.getTask(taskId)
-            let expiredTime = taskinfo[6]
+            let expiredTime = taskinfo[7]
             await helperstime.increaseTo(expiredTime+BigInt(1));
 
             await expect(
@@ -845,6 +866,7 @@ describe('TaskReward Contract', async () => {
                 0, // TaskType.RECAST
                 oneETH,
                 mockToken.target,
+                starttime,
                 endTime,
                 maxParticipants_,
                 ethers.hexlify(targetHash_),
@@ -869,7 +891,7 @@ describe('TaskReward Contract', async () => {
 
             // 等待过期时间
             let taskinfo = await taskReward.getTask(taskId)
-            let expiredTime = taskinfo[6]
+            let expiredTime = taskinfo[7]
             await helperstime.increaseTo(expiredTime+BigInt(1));
 
             // 记录创建者的初始余额
