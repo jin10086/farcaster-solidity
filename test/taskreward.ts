@@ -164,7 +164,7 @@ describe('TaskReward Contract', async () => {
                 )).to.be.revertedWithCustomError(taskReward, 'TaskNotFound');
         });
 
-        it('should revert with wait for endtime', async () => {
+        it('should revert with WaitForEnd', async () => {
             const endTime = await helperstime.latest() + oneDay;
             await expect(taskReward.createTask(
                 0, // TaskType.RECAST
@@ -191,6 +191,39 @@ describe('TaskReward Contract', async () => {
                         message: recastProof.message
                     }
                 )).to.be.revertedWithCustomError(taskReward, 'WaitForEnd');
+        });
+
+        it('should revert with TaskIsExpired', async () => {
+            const endTime = await helperstime.latest() + oneDay;
+            let taskId = await taskReward.taskIdCounter()
+            await expect(taskReward.createTask(
+                0, // TaskType.RECAST
+                oneETH,
+                mockToken.target,
+                endTime,
+                10, // maxParticipants
+                zerotargetHash,
+                [], // requiredWords
+                0, // minLength
+                score // score
+            )).to.be.not.reverted;
+            
+            // Fast forward time to after expiredTime
+            let taskinfo = await taskReward.getTask(taskId)
+            let expiredTime = taskinfo[6]
+            await helperstime.increaseTo(expiredTime+BigInt(1));
+
+            await expect(
+                taskReward.submitProof(
+                    taskId,
+                    user1.address,
+                    {
+                        public_key: recastProof.public_key,
+                        signature_r: recastProof.signature_r,
+                        signature_s: recastProof.signature_s,
+                        message: recastProof.message
+                    }
+                )).to.be.revertedWithCustomError(taskReward, 'TaskIsExpired');
         });
 
         it('Should verify and reward RECAST proof', async () => {

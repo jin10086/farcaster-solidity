@@ -115,6 +115,7 @@ contract TaskReward is  ReentrancyGuard {
     error InvalidReward();
     error InvalidEndtime();
     error WaitForEnd();
+    error TaskIsExpired();
     error InvalidParticipants();
     error InvaildTaskStatus();
     error InsufficientReward();
@@ -182,6 +183,7 @@ contract TaskReward is  ReentrancyGuard {
         Task storage task = tasks[taskId];
         if (task.creator == address(0)) revert TaskNotFound();
         if (block.timestamp < task.endtime) revert WaitForEnd();
+        if (block.timestamp > task.expiredtime) revert TaskIsExpired();
         if (userClaimedTasks[taskId][user]) revert UserAlreadyClaimed();
         if (task.completedCount >= task.maxParticipants) revert TaskIsFullStaffed();
         if (task.status != TaskStatus.ACTIVE) revert InvaildTaskStatus();
