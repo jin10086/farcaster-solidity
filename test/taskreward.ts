@@ -16,6 +16,7 @@ describe('TaskReward Contract', async () => {
     let user1: any;
     let user2: any;
     const zerotargetHash = "0x0000000000000000000000000000000000000000";  // 正好20字节（40个十六进制字符）
+    const targetHash = "0x9f22514691c2375e25ae09263512ec7ec2c8e5de";
 
     const oneDay = 24 * 60 * 60;
     const oneETH = ethers.parseEther("1.0");
@@ -74,7 +75,7 @@ describe('TaskReward Contract', async () => {
                 starttime,
                 endTime,
                 10, // maxParticipants
-                zerotargetHash,
+                targetHash,
                 [], // requiredWords
                 0, // minLength
                 score // score
@@ -91,7 +92,7 @@ describe('TaskReward Contract', async () => {
                     endTime,
                     10,
                     0, // TaskStatus.ACTIVE
-                    zerotargetHash,
+                    targetHash,
                     [],
                     0,
                     score
@@ -142,7 +143,7 @@ describe('TaskReward Contract', async () => {
                     starttime,
                     endTime,
                     10,
-                    zerotargetHash,
+                    targetHash,
                     [],
                     0,
                     score
@@ -178,7 +179,7 @@ describe('TaskReward Contract', async () => {
                 starttime,
                 endTime,
                 10, // maxParticipants
-                zerotargetHash,
+                targetHash,
                 [], // requiredWords
                 0, // minLength
                 score // score
@@ -209,7 +210,7 @@ describe('TaskReward Contract', async () => {
                 starttime,
                 endTime,
                 10, // maxParticipants
-                zerotargetHash,
+                targetHash,
                 [], // requiredWords
                 0, // minLength
                 score // score
@@ -379,7 +380,7 @@ describe('TaskReward Contract', async () => {
                 starttime,
                 endTime,
                 maxParticipants_,
-                zerotargetHash,
+                targetHash,
                 [],
                 0,
                 score
@@ -405,13 +406,10 @@ describe('TaskReward Contract', async () => {
             let taskId = await taskReward.taskIdCounter()
             let maxParticipants_ = 10
             // Ensure targetHash_ is defined and convert properly
-
             
-            //Uint8Array to bytes20
-            let targetHash = zerotargetHash;
-            console.log("task0 targetHash:::", targetHash);
             //lasttime	+   oneday
             const endTime = await helperstime.latest() + oneDay;
+            let targetHash = '0x9f22514691c2375e25ae09263512ec7ec2c8e5d1'; //error targethash
             await taskReward.createTask(
                 0, // TaskType.RECAST
                 oneETH,
@@ -763,6 +761,30 @@ describe('TaskReward Contract', async () => {
                 )
             ).to.be.revertedWithCustomError(taskReward, 'RequiredWordsMismatch');
         });
+
+        it('Should revert with InvaildTaskRequirements', async () => {
+            let taskId = await taskReward.taskIdCounter()
+            let maxParticipants_ = 10
+            
+            const endTime = await helperstime.latest() + oneDay;
+            const requiredWords = ["How", "meme"];
+            const minLength = 3;
+
+            await expect( taskReward.createTask(
+                2, // TaskType.NEW_CAST
+                oneETH,
+                mockToken.target,
+                starttime,
+                endTime,
+                maxParticipants_,
+                "0x9f22514691c2375e25ae09263512ec7ec2c8e5de", // not zerotargetHash
+                requiredWords,
+                minLength,
+                score
+            )).to.be.revertedWithCustomError(taskReward, 'InvaildTaskRequirements');
+            
+        });
+
     });
 
     describe('Withdraw Unused Rewards', () => {

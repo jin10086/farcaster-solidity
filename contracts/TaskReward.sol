@@ -126,6 +126,7 @@ contract TaskReward is  ReentrancyGuard {
     error InvaildTaskStatus();
     error InsufficientReward();
     error InvalidTokenAddress();
+    error InvaildTaskRequirements();
     error InvalidScore();
     error TargetHashMismatch();
     error RequiredWordsMismatch();
@@ -158,6 +159,10 @@ contract TaskReward is  ReentrancyGuard {
         if (rewardToken == address(0)) revert InvalidTokenAddress();
         if (reward == 0) revert InvalidReward();
         if (score > 1000000) revert InvalidScore();
+        console.logBytes20(targetHash);
+        if (taskType == TaskType.NEW_CAST && targetHash != bytes20(0)) revert InvaildTaskRequirements();
+        if (taskType != TaskType.NEW_CAST && targetHash == bytes20(0)) revert InvaildTaskRequirements();
+
 
         uint256 perUserAmount = reward / maxParticipants;
 
