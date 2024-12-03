@@ -219,7 +219,7 @@ describe('TaskReward Contract', async () => {
             );
 
             // Fast forward time to after endTime
-            await helperstime.increase(endTime + 1);
+            await helperstime.increaseTo(endTime + 1);
 
             const tx = await taskReward.submitProof(
                 taskId, // taskId
@@ -308,7 +308,7 @@ describe('TaskReward Contract', async () => {
                 score
             );
 
-            await helperstime.increase(endTime + 1);
+            await helperstime.increaseTo(endTime + 1);
 
             // Use likeProof for recast task - this will pass signature verification but fail on reaction type
             await expect(taskReward.submitProof(
@@ -342,7 +342,7 @@ describe('TaskReward Contract', async () => {
                 score
             );
 
-            await helperstime.increase(endTime + 1);
+            await helperstime.increaseTo(endTime + 1);
 
             // Use newcast for recast task - this will fail on message type check
             await expect(taskReward.submitProof(
@@ -381,7 +381,7 @@ describe('TaskReward Contract', async () => {
                 score
             );
 
-            await helperstime.increase(endTime + 1);
+            await helperstime.increaseTo(endTime + 1);
 
             await expect(taskReward.submitProof(
                 taskId, // taskId
@@ -419,7 +419,7 @@ describe('TaskReward Contract', async () => {
                 score
             );
 
-            await helperstime.increase(endTime + 1);
+            await helperstime.increaseTo(endTime + 1);
 
             // 修改签名以使验证失败
             await expect(taskReward.submitProof(
@@ -459,7 +459,7 @@ describe('TaskReward Contract', async () => {
                 score
             );
 
-            await helperstime.increase(endTime + 1);
+            await helperstime.increaseTo(endTime + 1);
 
             const tx = await taskReward.submitProof(
                 taskId,
@@ -506,7 +506,7 @@ describe('TaskReward Contract', async () => {
                 score
             );
 
-            await helperstime.increase(endTime + 1);
+            await helperstime.increaseTo(endTime + 1);
 
             const tx = await taskReward.submitProof(
                 taskId,
@@ -547,7 +547,7 @@ describe('TaskReward Contract', async () => {
                 score
             );
 
-            await helperstime.increase(endTime + 1);
+            await helperstime.increaseTo(endTime + 1);
 
             await expect(
                 taskReward.submitProof(
@@ -586,7 +586,7 @@ describe('TaskReward Contract', async () => {
                 score
             );
 
-            await helperstime.increase(endTime + 1);
+            await helperstime.increaseTo(endTime + 1);
 
             await expect(
                 taskReward.submitProof(
@@ -626,7 +626,7 @@ describe('TaskReward Contract', async () => {
                 score
             );
 
-            await helperstime.increase(endTime + 1);
+            await helperstime.increaseTo(endTime + 1);
 
             const tx = await taskReward.submitProof(
                 taskId,
@@ -662,7 +662,7 @@ describe('TaskReward Contract', async () => {
                 score
             );
 
-            await helperstime.increase(endTime + 1);
+            await helperstime.increaseTo(endTime + 1);
 
             await expect(
                 taskReward.submitProof(
@@ -696,7 +696,7 @@ describe('TaskReward Contract', async () => {
                 score
             );
 
-            await helperstime.increase(endTime + 1);
+            await helperstime.increaseTo(endTime + 1);
 
             await expect(
                 taskReward.submitProof(
@@ -776,7 +776,7 @@ describe('TaskReward Contract', async () => {
             );
 
             // 提交一个证明以完成任务
-            await helperstime.increase(endTime + 1);
+            await helperstime.increaseTo(endTime + 1);
             await taskReward.submitProof(
                 taskId,
                 user1.address,
@@ -791,7 +791,7 @@ describe('TaskReward Contract', async () => {
             // 等待过期时间
             let taskinfo = await taskReward.getTask(taskId)
             let expiredTime = taskinfo[6]
-            await helperstime.increase(expiredTime+BigInt(1));
+            await helperstime.increaseTo(expiredTime+BigInt(1));
 
             await expect(
                 taskReward.withdrawUnusedRewards(taskId)
