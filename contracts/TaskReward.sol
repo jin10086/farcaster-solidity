@@ -8,12 +8,16 @@ import "hardhat/console.sol";
 // import "./libraries/Ed25519.sol";
 // import "./protobufs/message.proto.sol";
 
+//通过地址获取 fid
 interface IVerificationsV4Reader {
-    function getFid(address verifier) external view returns (uint256 fid);
     function getFidWithEvent(address verifier) external returns (uint256 fid);
-    function getFids(address[] calldata verifiers) external view returns (uint256[] memory fid);
 }
 
+//通过地址获取分数
+interface INeynarUserScoresReader {
+    function getScoreWithEvent(address verifier) external returns (uint24 score);
+
+}
 
 import { MessageData,MessageType,ReactionType } from './protobufs/message.proto.sol';
 
@@ -39,7 +43,8 @@ contract TaskReward is  ReentrancyGuard {
     enum TaskStatus { ACTIVE, COMPLETED, EXPIRED }
 
     IFarcasterVerify public farcasterVerify;
-    // IVerificationsV4Reader public getscore;
+    IVerificationsV4Reader public getuserfid = IVerificationsV4Reader(0xdB1eCF22d195dF9e03688C33707b19C68BdEd142);
+    INeynarUserScoresReader public getuserscore = INeynarUserScoresReader(0xdB1eCF22d195dF9e03688C33707b19C68BdEd142);
 
     struct Task {
         address creator;
@@ -125,6 +130,9 @@ contract TaskReward is  ReentrancyGuard {
     error RequiredWordsMismatch();
     error MinLengthMismatch();
     error InvalidTaskType();
+    error NotEnoughScore();
+    error NotFoundFID();
+    error AddressDontMatchFid();
 
     constructor(address _farcasterVerifyAddress) {
         // getscore = IVerificationsV4Reader(_verificationsAddress);
@@ -146,7 +154,7 @@ contract TaskReward is  ReentrancyGuard {
         if (maxParticipants == 0) revert InvalidParticipants();
         if (rewardToken == address(0)) revert InvalidTokenAddress();
         if (reward == 0) revert InvalidReward();
-        if (score < 0 || score > 1000000) revert InvalidScore();
+        if (score > 1000000) revert InvalidScore();
 
         uint256 perUserAmount = reward / maxParticipants;
 
@@ -188,7 +196,14 @@ contract TaskReward is  ReentrancyGuard {
         if (task.completedCount >= task.maxParticipants) revert TaskIsFullStaffed();
         if (task.status != TaskStatus.ACTIVE) revert InvaildTaskStatus();
 
-        _verifyProof(task, proof);
+        if (task.score> 0){
+            uint256 userScore = getuserscore.getScoreWithEvent(user);
+            if (userScore < task.score) revert NotEnoughScore();
+        }
+        uint256 userFid = getuserfid.getFidWithEvent(user);
+        if (userFid == 0) revert NotFoundFID();
+
+        _verifyProof(task, proof,userFid);
         
 
         // Mark task as completed for this user
@@ -206,7 +221,7 @@ contract TaskReward is  ReentrancyGuard {
         emit RewardPaid(taskId, user, task.perUserAmount, task.rewardToken);
     }
 
-    function _verifyProof(Task memory task, TaskProof calldata proof) internal returns (bool) {
+    function _verifyProof(Task memory task, TaskProof calldata proof,uint256 userFid) internal returns (bool) {
 
         MessageData memory message_data;
         if (task.taskType == TaskType.RECAST || task.taskType == TaskType.LIKE) {
@@ -215,6 +230,9 @@ contract TaskReward is  ReentrancyGuard {
             message_data =  farcasterVerify.verifyCastAddMessage(proof.public_key, proof.signature_r, proof.signature_s, proof.message);
         }
 
+        //检查用户和 fid 地址是否一致
+        uint256 proofFid =uint256(message_data.fid);
+        if (proofFid != userFid) revert AddressDontMatchFid();
         //TODO: 验证 开始时间以及结束时间.
 
 
