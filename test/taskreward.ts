@@ -19,6 +19,7 @@ describe('TaskReward Contract', async () => {
 
     const oneDay = 24 * 60 * 60;
     const oneETH = ethers.parseEther("1.0");
+    const score = 500000;
 
     before(async () => {
         [owner, user1, user2] = await ethers.getSigners();
@@ -73,7 +74,7 @@ describe('TaskReward Contract', async () => {
                 zerotargetHash,
                 [], // requiredWords
                 0, // minLength
-                500000 // score
+                score // score
             );
 
             await expect(tx)
@@ -90,7 +91,7 @@ describe('TaskReward Contract', async () => {
                     zerotargetHash,
                     [],
                     0,
-                    500000
+                    score
                 );
         });
 
@@ -106,7 +107,7 @@ describe('TaskReward Contract', async () => {
                 targetHash,
                 [], // requiredWords
                 0, // minLength
-                500000 // score
+                score // score
             );
 
             await expect(tx)
@@ -123,7 +124,7 @@ describe('TaskReward Contract', async () => {
                     targetHash,
                     [],
                     0,
-                    500000
+                    score
                 );
         });
 
@@ -139,7 +140,7 @@ describe('TaskReward Contract', async () => {
                     zerotargetHash,
                     [],
                     0,
-                    500000
+                    score
                 )
             ).to.be.revertedWithCustomError(taskReward, 'InvalidEndtime');
         });
@@ -174,7 +175,7 @@ describe('TaskReward Contract', async () => {
                 zerotargetHash,
                 [], // requiredWords
                 0, // minLength
-                500000 // score
+                score // score
             )).to.be.not.reverted;
             
             let taskId = await taskReward.taskIdCounter() - BigInt(1);
@@ -214,7 +215,7 @@ describe('TaskReward Contract', async () => {
                 targetHash,
                 [],
                 0,
-                500000
+                score
             );
 
             // Fast forward time to after endTime
@@ -304,7 +305,7 @@ describe('TaskReward Contract', async () => {
                 targetHash,
                 [],
                 0,
-                500000
+                score
             );
 
             await helperstime.increase(endTime + 1);
@@ -338,7 +339,7 @@ describe('TaskReward Contract', async () => {
                 zerotargetHash,
                 [],
                 0,
-                500000
+                score
             );
 
             await helperstime.increase(endTime + 1);
@@ -377,7 +378,7 @@ describe('TaskReward Contract', async () => {
                 targetHash,
                 [],
                 0,
-                500000
+                score
             );
 
             await helperstime.increase(endTime + 1);
@@ -395,8 +396,43 @@ describe('TaskReward Contract', async () => {
 
         })
 
+        it('should revert with InvalidSignature when using wrong signature', async () => {
+            let taskId = await taskReward.taskIdCounter()
+            let recastProof = getproof(recast);
+            let targetHash_ = recastProof.rawmessage.reactionBody?.targetCastId?.hash;
+            let maxParticipants_ = 10
+            if (!targetHash_) {
+                throw new Error('Target hash is undefined');
+            }
+            let targetHash = ethers.hexlify(targetHash_);
+            
+            const endTime = await helperstime.latest() + oneDay;
+            await taskReward.createTask(
+                0, // TaskType.RECAST
+                oneETH,
+                mockToken.target,
+                endTime,
+                maxParticipants_,
+                targetHash,
+                [],
+                0,
+                score
+            );
 
+            await helperstime.increase(endTime + 1);
 
+            // 修改签名以使验证失败
+            await expect(taskReward.submitProof(
+                taskId,
+                user1.address,
+                {
+                    public_key: recastProof.public_key,
+                    signature_r: "0x1234567890123456789012345678901234567890123456789012345678901234", // 错误的签名
+                    signature_s: recastProof.signature_s,
+                    message: recastProof.message
+                }
+            )).to.be.revertedWithCustomError(farcasterVerify, 'InvalidSignature');
+        });
     });
 
     describe('LIKE Proof Submission', () => {
@@ -420,7 +456,7 @@ describe('TaskReward Contract', async () => {
                 targetHash,
                 [],
                 0,
-                500000
+                score
             );
 
             await helperstime.increase(endTime + 1);
@@ -467,7 +503,7 @@ describe('TaskReward Contract', async () => {
                 targetHash,
                 requiredWords,
                 minLength,
-                500000
+                score
             );
 
             await helperstime.increase(endTime + 1);
@@ -508,7 +544,7 @@ describe('TaskReward Contract', async () => {
                 targetHash,
                 [],
                 minLength,
-                500000
+                score
             );
 
             await helperstime.increase(endTime + 1);
@@ -547,7 +583,7 @@ describe('TaskReward Contract', async () => {
                 targetHash,
                 requiredWords,
                 0,
-                500000
+                score
             );
 
             await helperstime.increase(endTime + 1);
@@ -587,7 +623,7 @@ describe('TaskReward Contract', async () => {
                 zerotargetHash,
                 requiredWords,
                 minLength,
-                500000
+                score
             );
 
             await helperstime.increase(endTime + 1);
@@ -623,7 +659,7 @@ describe('TaskReward Contract', async () => {
                 zerotargetHash,
                 [],
                 minLength,
-                500000
+                score
             );
 
             await helperstime.increase(endTime + 1);
@@ -657,7 +693,7 @@ describe('TaskReward Contract', async () => {
                 zerotargetHash,
                 requiredWords,
                 0,
-                500000
+                score
             );
 
             await helperstime.increase(endTime + 1);
@@ -674,6 +710,151 @@ describe('TaskReward Contract', async () => {
                     }
                 )
             ).to.be.revertedWithCustomError(taskReward, 'RequiredWordsMismatch');
+        });
+    });
+
+    describe('Withdraw Unused Rewards', () => {
+        let recastProof = getproof(recast);
+
+        it('should revert with TaskNotFound when task does not exist', async () => {
+            const nonExistentTaskId = 999999;
+            await expect(
+                taskReward.withdrawUnusedRewards(nonExistentTaskId)
+            ).to.be.revertedWithCustomError(taskReward, 'TaskNotFound');
+        });
+
+        it('should revert with TaskNotExpired when task has not expired', async () => {
+            let taskId = await taskReward.taskIdCounter()
+            let targetHash_ = recastProof.rawmessage.reactionBody?.targetCastId?.hash;
+            if (!targetHash_) {
+                throw new Error('Target hash is undefined');
+            }
+            let maxParticipants_ = 10
+            
+            const endTime = await helperstime.latest() + oneDay;            
+            await taskReward.createTask(
+                0, // TaskType.RECAST
+                oneETH,
+                mockToken.target,
+                endTime,
+                maxParticipants_,
+                ethers.hexlify(targetHash_),
+                [],
+                0,
+                score
+            );
+            let taskinfo = await taskReward.getTask(taskId)
+            console.log(taskinfo)
+            let expiredTime = taskinfo[6]
+
+            await helperstime.increaseTo(expiredTime - BigInt(100)); // 小于过期时间
+            await expect(
+                taskReward.withdrawUnusedRewards(taskId)
+            ).to.be.revertedWithCustomError(taskReward, 'TaskNotExpired');
+        });
+
+        it('should revert with InvaildTaskStatus when all rewards are claimed', async () => {
+            let taskId = await taskReward.taskIdCounter()
+            let targetHash_ = recastProof.rawmessage.reactionBody?.targetCastId?.hash;
+            if (!targetHash_) {
+                throw new Error('Target hash is undefined');
+            }
+            let maxParticipants_ = 1 // 只允许一个参与者
+            
+            const endTime = await helperstime.latest() + oneDay;
+            
+            await taskReward.createTask(
+                0, // TaskType.RECAST
+                oneETH,
+                mockToken.target,
+                endTime,
+                maxParticipants_,
+                ethers.hexlify(targetHash_),
+                [],
+                0,
+                score
+            );
+
+            // 提交一个证明以完成任务
+            await helperstime.increase(endTime + 1);
+            await taskReward.submitProof(
+                taskId,
+                user1.address,
+                {
+                    public_key: recastProof.public_key,
+                    signature_r: recastProof.signature_r,
+                    signature_s: recastProof.signature_s,
+                    message: recastProof.message
+                }
+            );
+
+            // 等待过期时间
+            let taskinfo = await taskReward.getTask(taskId)
+            let expiredTime = taskinfo[6]
+            await helperstime.increase(expiredTime+BigInt(1));
+
+            await expect(
+                taskReward.withdrawUnusedRewards(taskId)
+            ).to.be.revertedWithCustomError(taskReward, 'InvaildTaskStatus');
+        });
+
+        it('should successfully withdraw unused rewards', async () => {
+            let taskId = await taskReward.taskIdCounter()
+            let targetHash_ = recastProof.rawmessage.reactionBody?.targetCastId?.hash;
+            if (!targetHash_) {
+                throw new Error('Target hash is undefined');
+            }
+            let maxParticipants_ = 2 // 允许两个参与者
+            
+            const endTime = await helperstime.latest() + oneDay;
+            
+            await taskReward.createTask(
+                0, // TaskType.RECAST
+                oneETH,
+                mockToken.target,
+                endTime,
+                maxParticipants_,
+                ethers.hexlify(targetHash_),
+                [],
+                0,
+                score
+            );
+
+            // 提交一个证明，留下一个未使用的奖励
+            await helperstime.increaseTo(endTime + 1);
+            await expect(taskReward.submitProof(
+                taskId,
+                user1.address,
+                {
+                    public_key: recastProof.public_key,
+                    signature_r: recastProof.signature_r,
+                    signature_s: recastProof.signature_s,
+                    message: recastProof.message
+                }
+            )).to.emit(taskReward, 'RewardPaid')
+            .withArgs(taskId, user1.address, oneETH / BigInt(maxParticipants_), mockToken.target);
+
+            // 等待过期时间
+            let taskinfo = await taskReward.getTask(taskId)
+            let expiredTime = taskinfo[6]
+            await helperstime.increaseTo(expiredTime+BigInt(1));
+
+            // 记录创建者的初始余额
+            const initialBalance = await mockToken.balanceOf(owner.address);
+
+            const unusedRewards = (oneETH/BigInt(maxParticipants_)) * (BigInt(maxParticipants_)-BigInt(1));
+            // 提取未使用的奖励
+            await expect(taskReward.withdrawUnusedRewards(taskId))
+                .to.emit(taskReward, 'TaskExpired')
+                .withArgs(taskId, owner.address, unusedRewards); // 应该退还一个参与者的奖励金额
+
+            // 验证创建者的余额增加了未使用的奖励金额
+            const finalBalance = await mockToken.balanceOf(owner.address);
+            expect(finalBalance - initialBalance).to.equal(unusedRewards);
+
+            // 验证任务状态改变
+            const task = await taskReward.getTask(taskId);
+            expect(task.status).to.equal(2); // TaskStatus.EXPIRED
         });
     });
 });
