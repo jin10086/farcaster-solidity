@@ -3,6 +3,8 @@ pragma solidity ^0.8.9;
 
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "@openzeppelin/contracts/access/Ownable.sol";
+
 import "hardhat/console.sol";
 // import "./libraries/Blake3.sol";
 // import "./libraries/Ed25519.sol";
@@ -38,7 +40,7 @@ interface IFarcasterVerify{
 
 }
 
-contract TaskReward is  ReentrancyGuard {
+contract TaskReward is  ReentrancyGuard, Ownable {
     enum TaskType { RECAST, REPLY, NEW_CAST, LIKE }
     enum TaskStatus { ACTIVE, COMPLETED, EXPIRED }
 
@@ -48,6 +50,7 @@ contract TaskReward is  ReentrancyGuard {
 
     //farcaster basetime https://docs.farcaster.xyz/learn/what-is-farcaster/messages#timestamps
     uint32 constant BASETIME = 1609459200;
+    uint256 public fee = 100; //1% fee  max 5%
 
     struct Task {
         address creator;
@@ -88,6 +91,7 @@ contract TaskReward is  ReentrancyGuard {
         TaskType taskType,
         uint256 reward,
         address rewardToken,
+        uint256 starttime,
         uint256 endtime,  
         uint256 maxParticipants,
         TaskStatus status,
@@ -113,6 +117,10 @@ contract TaskReward is  ReentrancyGuard {
         uint256 indexed taskId,
         address indexed creator,
         uint256 returnedRewards
+    );
+
+    event UpdateFee(
+        uint256 fee
     );
 
     // Errors
@@ -157,7 +165,8 @@ contract TaskReward is  ReentrancyGuard {
         uint256 minLength,
         uint256 score
     ) external payable returns (uint256) {
-        if (endtime <= block.timestamp) revert InvalidEndtime();
+        // if (endtime <= block.timestamp) revert InvalidEndtime();
+        if (endtime < starttime) revert InvalidEndtime();
         if (maxParticipants == 0) revert InvalidParticipants();
         if (rewardToken == address(0)) revert InvalidTokenAddress();
         if (reward == 0) revert InvalidReward();
@@ -189,7 +198,7 @@ contract TaskReward is  ReentrancyGuard {
             score: score
         });
 
-        emit TaskCreated(taskId, msg.sender, taskType, reward, rewardToken, endtime, maxParticipants, TaskStatus.ACTIVE, targetHash, requiredWords, minLength,score);
+        emit TaskCreated(taskId, msg.sender, taskType, reward, rewardToken, starttime,endtime, maxParticipants, TaskStatus.ACTIVE, targetHash, requiredWords, minLength,score);
         return taskId;
     }
 
@@ -226,10 +235,25 @@ contract TaskReward is  ReentrancyGuard {
             task.status = TaskStatus.COMPLETED;
             emit TaskStatusChanged(taskId, task.status);
         }
+        _pay(task,user,taskId);
+    }
 
+    function _pay(Task memory task,address user,uint256 taskId) internal {
         // Pay reward to user
-        IERC20(task.rewardToken).transfer(user, task.perUserAmount);
-        emit RewardPaid(taskId, user, task.perUserAmount, task.rewardToken);
+        if (fee==uint256(0)){
+            uint256 toUser = task.perUserAmount;
+            IERC20(task.rewardToken).transfer(user, toUser);
+            emit RewardPaid(taskId, user, toUser, task.rewardToken);
+            return;
+        }else{
+            uint256 toUser = task.perUserAmount* (10000-fee)/10000;
+            uint256 toDev = task.perUserAmount* fee/10000;
+            IERC20(task.rewardToken).transfer(user, toUser);
+            emit RewardPaid(taskId, user, toUser, task.rewardToken);
+            IERC20(task.rewardToken).transfer(owner(), toDev);
+            return;
+        }
+
     }
 
     function _verifyProof(Task memory task, TaskProof calldata proof,uint256 userFid) internal returns (bool) {
@@ -249,6 +273,9 @@ contract TaskReward is  ReentrancyGuard {
         
         //帖子的发布时间
         uint32 messageTime = message_data.timestamp	+BASETIME;
+        console.log("messageTime:",messageTime);
+        console.log("task.starttime:",task.starttime);
+        console.log("task.endtime:",task.endtime);
         if (messageTime < task.starttime || messageTime > task.endtime) revert InvaildMessageTime();
 
 
@@ -397,5 +424,15 @@ contract TaskReward is  ReentrancyGuard {
 
     function hasCompleted(uint256 taskId, address user) external view returns (bool) {
         return userClaimedTasks[taskId][user];
+    }
+
+    function getTaskRequiredWords(uint256 taskId) public view returns (string[] memory) {
+        return tasks[taskId].requiredWords;
+    }
+
+    function setFee(uint256 _fee) external onlyOwner {
+        require(_fee <= 500, "Fee must be less than 5%");
+        fee = _fee;
+        emit UpdateFee(_fee);
     }
 }

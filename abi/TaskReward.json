@@ -12,7 +12,27 @@
   },
   {
     "inputs": [],
+    "name": "AddressDontMatchFid",
+    "type": "error"
+  },
+  {
+    "inputs": [],
     "name": "InsufficientReward",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "InvaildMessageTime",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "InvaildTaskRequirements",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "InvaildTaskStatus",
     "type": "error"
   },
   {
@@ -57,6 +77,16 @@
   },
   {
     "inputs": [],
+    "name": "NotEnoughScore",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "NotFoundFID",
+    "type": "error"
+  },
+  {
+    "inputs": [],
     "name": "RequiredWordsMismatch",
     "type": "error"
   },
@@ -67,12 +97,17 @@
   },
   {
     "inputs": [],
-    "name": "TaskAlreadyCompleted",
+    "name": "TaskIsExpired",
     "type": "error"
   },
   {
     "inputs": [],
-    "name": "TaskNotEnded",
+    "name": "TaskIsFullStaffed",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "TaskNotExpired",
     "type": "error"
   },
   {
@@ -84,6 +119,30 @@
     "inputs": [],
     "name": "UserAlreadyClaimed",
     "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "WaitForEnd",
+    "type": "error"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "previousOwner",
+        "type": "address"
+      },
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "newOwner",
+        "type": "address"
+      }
+    ],
+    "name": "OwnershipTransferred",
+    "type": "event"
   },
   {
     "anonymous": false,
@@ -148,6 +207,12 @@
         "internalType": "address",
         "name": "rewardToken",
         "type": "address"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "starttime",
+        "type": "uint256"
       },
       {
         "indexed": false,
@@ -240,6 +305,19 @@
     "type": "event"
   },
   {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "fee",
+        "type": "uint256"
+      }
+    ],
+    "name": "UpdateFee",
+    "type": "event"
+  },
+  {
     "inputs": [
       {
         "internalType": "enum TaskReward.TaskType",
@@ -257,9 +335,14 @@
         "type": "address"
       },
       {
-        "internalType": "uint256",
+        "internalType": "uint32",
+        "name": "starttime",
+        "type": "uint32"
+      },
+      {
+        "internalType": "uint32",
         "name": "endtime",
-        "type": "uint256"
+        "type": "uint32"
       },
       {
         "internalType": "uint256",
@@ -312,6 +395,19 @@
     "type": "function"
   },
   {
+    "inputs": [],
+    "name": "fee",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
     "inputs": [
       {
         "internalType": "uint256",
@@ -349,14 +445,19 @@
             "type": "address"
           },
           {
-            "internalType": "uint256",
-            "name": "endtime",
-            "type": "uint256"
+            "internalType": "uint32",
+            "name": "starttime",
+            "type": "uint32"
           },
           {
-            "internalType": "uint256",
+            "internalType": "uint32",
+            "name": "endtime",
+            "type": "uint32"
+          },
+          {
+            "internalType": "uint32",
             "name": "expiredtime",
-            "type": "uint256"
+            "type": "uint32"
           },
           {
             "internalType": "uint256",
@@ -408,6 +509,51 @@
         "internalType": "uint256",
         "name": "taskId",
         "type": "uint256"
+      }
+    ],
+    "name": "getTaskRequiredWords",
+    "outputs": [
+      {
+        "internalType": "string[]",
+        "name": "",
+        "type": "string[]"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "getuserfid",
+    "outputs": [
+      {
+        "internalType": "contract IVerificationsV4Reader",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "getuserscore",
+    "outputs": [
+      {
+        "internalType": "contract INeynarUserScoresReader",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "taskId",
+        "type": "uint256"
       },
       {
         "internalType": "address",
@@ -424,6 +570,39 @@
       }
     ],
     "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "owner",
+    "outputs": [
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "renounceOwnership",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "_fee",
+        "type": "uint256"
+      }
+    ],
+    "name": "setFee",
+    "outputs": [],
+    "stateMutability": "nonpayable",
     "type": "function"
   },
   {
@@ -520,14 +699,19 @@
         "type": "address"
       },
       {
-        "internalType": "uint256",
-        "name": "endtime",
-        "type": "uint256"
+        "internalType": "uint32",
+        "name": "starttime",
+        "type": "uint32"
       },
       {
-        "internalType": "uint256",
+        "internalType": "uint32",
+        "name": "endtime",
+        "type": "uint32"
+      },
+      {
+        "internalType": "uint32",
         "name": "expiredtime",
-        "type": "uint256"
+        "type": "uint32"
       },
       {
         "internalType": "uint256",
@@ -561,6 +745,19 @@
       }
     ],
     "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "newOwner",
+        "type": "address"
+      }
+    ],
+    "name": "transferOwnership",
+    "outputs": [],
+    "stateMutability": "nonpayable",
     "type": "function"
   },
   {

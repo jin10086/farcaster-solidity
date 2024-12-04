@@ -7,12 +7,12 @@
         "type": "address"
       }
     ],
-    "name": "getFidWithEvent",
+    "name": "getScoreWithEvent",
     "outputs": [
       {
-        "internalType": "uint256",
-        "name": "fid",
-        "type": "uint256"
+        "internalType": "uint24",
+        "name": "score",
+        "type": "uint24"
       }
     ],
     "stateMutability": "nonpayable",

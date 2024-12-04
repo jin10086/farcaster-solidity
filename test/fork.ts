@@ -7,10 +7,10 @@ const {
   } = require("@nomicfoundation/hardhat-toolbox/network-helpers");
 
 // Import your test data and utils
-import { newcast, likecast, recast, castadd } from './rawdata';
+import { newcast, likecast, recast, castadd ,castaddinChannel,castnewinChannel,castlikeinChannel} from './rawdata';
 import { getproof } from './utils1';
 
-
+const BASETIME = 1609459200;
 describe("TaskReward contract", function () {
     async function deployTokenFixture() {
         let taskReward: TaskReward;
@@ -23,7 +23,7 @@ describe("TaskReward contract", function () {
         const oneDay = 24 * 60 * 60;
         const oneETH = ethers.parseEther("1.0");
         [owner, user1, user2] = await ethers.getSigners();
-        const addressScore100000 = "0x706f927c52f12241e3fb790f6db4a5b4a9a47461"
+        const addressScore100000 = "0x706f927C52f12241E3fb790F6db4A5B4a9A47461"
 
         // Deploy mock ERC20 token
         const MockERC20 = await ethers.getContractFactory('MockERC20');
@@ -202,4 +202,173 @@ describe("TaskReward contract", function () {
             }
         )).to.be.revertedWithCustomError(taskReward, "AddressDontMatchFid");
     });
+
+    function getcasthash(rawmessage:any){
+        let targetHash_;
+        if (rawmessage.castAddBody.parentUrl) {
+             targetHash_ = rawmessage.castAddBody?.embeds[0]?.castId?.hash;
+            
+        }else{
+             targetHash_ = rawmessage.castAddBody?.parentCastId?.hash;
+        }
+        if (!targetHash_) {
+            throw new Error('Target hash is undefined');
+        }
+        return ethers.hexlify(targetHash_);
+
+    }
+    //帖子的时间早于 任务发布时间
+    it("should revert with InvaildMessageTime and posttime before starttime ", async function () {
+        const { taskReward, mockToken, addressScore100000, addressScore0,oneDay } = await loadFixture(deployTokenFixture);
+        
+        
+        let taskId = await taskReward.taskIdCounter()
+        let castaddpoorf = getproof(castaddinChannel);
+        let posttime = castaddinChannel.data.timestamp+BASETIME;
+
+        const starttime = posttime + 1000; //在帖子发布之后开始
+        const endtime = await helperstime.latest() + oneDay;
+
+       
+        //Uint8Array to bytes20
+        let targetHash = getcasthash(castaddpoorf.rawmessage);
+        console.log("task0 targetHash:::", targetHash);
+                
+        // Create a task with high score requirement
+        await expect(taskReward.createTask(
+            1, // TaskType.REPLY
+            ethers.parseEther("100.0"),
+            mockToken.target,
+            starttime,
+            endtime,
+            10, // maxParticipants
+            targetHash,
+            [], // requiredWords
+            0, // minLength
+            1000000 // Very high score requirement
+        )).to.not.be.reverted;
+
+        await helperstime.increaseTo(endtime + 1);
+
+        // Try to complete task with insufficient score
+        await expect(taskReward.submitProof(
+            taskId, // taskId
+            addressScore100000,
+            {
+                public_key: castaddpoorf.public_key,
+                signature_r: castaddpoorf.signature_r,
+                signature_s: castaddpoorf.signature_s,
+                message: castaddpoorf.message
+            }
+        )).to.be.revertedWithCustomError(taskReward, "InvaildMessageTime");
+    });
+
+    //帖子的时间晚于 任务结束时间
+    it("should revert with InvaildMessageTime and posttime after endtime ", async function () {
+        const { taskReward, mockToken, addressScore100000, addressScore0,oneDay } = await loadFixture(deployTokenFixture);
+        
+        
+        let taskId = await taskReward.taskIdCounter()
+        let castaddpoorf = getproof(castaddinChannel);
+        let posttime = castaddinChannel.data.timestamp+BASETIME;
+
+        const starttime = posttime - 1000; 
+        const endtime = posttime -10;   
+
+       
+        //Uint8Array to bytes20
+        let targetHash = getcasthash(castaddpoorf.rawmessage);
+        console.log("task0 targetHash:::", targetHash);
+                
+        // Create a task with high score requirement
+        await expect(taskReward.createTask(
+            1, // TaskType.REPLY
+            ethers.parseEther("100.0"),
+            mockToken.target,
+            starttime,
+            endtime,
+            10, // maxParticipants
+            targetHash,
+            [], // requiredWords
+            0, // minLength
+            1000000 // Very high score requirement
+        )).to.not.be.reverted;
+        // Try to complete task with insufficient score
+        await expect(taskReward.submitProof(
+            taskId, // taskId
+            addressScore100000,
+            {
+                public_key: castaddpoorf.public_key,
+                signature_r: castaddpoorf.signature_r,
+                signature_s: castaddpoorf.signature_s,
+                message: castaddpoorf.message
+            }
+        )).to.be.revertedWithCustomError(taskReward, "InvaildMessageTime");
+    });
+
+
+    it("should verify and reward castadd proof", async function () {
+        const { taskReward, mockToken, addressScore100000, addressScore0,oneDay, owner } = await loadFixture(deployTokenFixture);
+        
+        
+        let taskId = await taskReward.taskIdCounter()
+        let castaddpoorf = getproof(castaddinChannel);
+        let posttime = castaddinChannel.data.timestamp+BASETIME;
+
+        const starttime = posttime - 1000; 
+        const endtime = posttime + oneDay;   
+
+        let reward = ethers.parseEther("100.0");
+        let maxParticipants = 10;
+
+       
+        //Uint8Array to bytes20
+        let targetHash = getcasthash(castaddpoorf.rawmessage);
+                
+        // Create a task with high score requirement
+        await expect(taskReward.createTask(
+            1, // TaskType.REPLY
+            reward,
+            mockToken.target,
+            starttime,
+            endtime,
+            maxParticipants,
+            targetHash,
+            [], // requiredWords
+            0, // minLength
+            1000000 // Very high score requirement
+        )).to.not.be.reverted;
+        // Try to complete task with insufficient score
+
+        let tx = await taskReward.submitProof(
+            taskId, // taskId
+            addressScore100000,
+            {
+                public_key: castaddpoorf.public_key,
+                signature_r: castaddpoorf.signature_r,
+                signature_s: castaddpoorf.signature_s,
+                message: castaddpoorf.message
+            }
+        )
+        let fee = await taskReward.fee();
+        let toUser;
+        let toDev;
+        let perUserAmount = reward / BigInt(maxParticipants)
+        if (fee>0){
+            toUser =  perUserAmount * (10000n -fee)/10000n;
+            toDev = perUserAmount  * fee/10000n;
+        }
+        console.log("toUser:::", toUser);
+        console.log("toDev:::", toDev);
+
+        await expect(tx)
+        .to.emit(taskReward, 'RewardPaid')
+        .withArgs(taskId, addressScore100000, toUser, mockToken.target);
+
+        await expect(tx)
+        .to.changeTokenBalances(mockToken,[taskReward.target,addressScore100000,owner],[-ethers.parseEther("10.0"),toUser,toDev])
+        
+    });
+
+
 });

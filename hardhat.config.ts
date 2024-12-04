@@ -28,6 +28,10 @@ const config: HardhatUserConfig = {
       forking: {
         url: "https://base-mainnet.g.alchemy.com/v2/v420WMGsNrqKkj7688s8mGviNhR-xQ8S",
         blockNumber: 23216000
+      }, 
+      mining: {
+        auto: true,
+        // interval: 2000
       }
     }
   },
