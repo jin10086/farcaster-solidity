@@ -5,7 +5,7 @@ import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 
-import "hardhat/console.sol";
+// import "hardhat/console.sol";
 // import "./libraries/Blake3.sol";
 // import "./libraries/Ed25519.sol";
 // import "./protobufs/message.proto.sol";
@@ -165,7 +165,7 @@ contract TaskReward is  ReentrancyGuard, Ownable {
         uint256 minLength,
         uint256 score
     ) external payable returns (uint256) {
-        // if (endtime <= block.timestamp) revert InvalidEndtime();
+        if (endtime <= block.timestamp) revert InvalidEndtime();
         if (endtime < starttime) revert InvalidEndtime();
         if (maxParticipants == 0) revert InvalidParticipants();
         if (rewardToken == address(0)) revert InvalidTokenAddress();
@@ -217,7 +217,6 @@ contract TaskReward is  ReentrancyGuard, Ownable {
 
         if (task.score> 0){
             uint256 userScore = getuserscore.getScoreWithEvent(user);
-            console.log("userScore:",userScore);
             if (userScore < task.score) revert NotEnoughScore();
         }
         uint256 userFid = getuserfid.getFidWithEvent(user);
@@ -267,15 +266,12 @@ contract TaskReward is  ReentrancyGuard, Ownable {
 
         //检查用户和 fid 地址是否一致
         uint256 proofFid =uint256(message_data.fid);
-        console.log("proofFid:",proofFid);
-        console.log("userFid:",userFid);
+
         if (proofFid != userFid) revert AddressDontMatchFid();
         
         //帖子的发布时间
         uint32 messageTime = message_data.timestamp	+BASETIME;
-        console.log("messageTime:",messageTime);
-        console.log("task.starttime:",task.starttime);
-        console.log("task.endtime:",task.endtime);
+
         if (messageTime < task.starttime || messageTime > task.endtime) revert InvaildMessageTime();
 
 

@@ -1,5 +1,6 @@
 import { ethers } from 'hardhat';
 import { TaskReward, FarcasterVerify, MockERC20 } from '../typechain-types';
+import {time as helperstime} from "@nomicfoundation/hardhat-network-helpers";
 async function main() {
   // Deploy mock ERC20 token
   const MockERC20 = await ethers.getContractFactory('MockERC20');
@@ -47,6 +48,10 @@ async function main() {
     myaddress,
     "0x1000000000000000000000000000000000000000000000",
   ]);
+
+  let now1 = Math.floor(Date.now() / 1000);
+  await helperstime.increaseTo(now1);
+  
 }
 
 main()
